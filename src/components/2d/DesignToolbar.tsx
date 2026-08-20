@@ -6,7 +6,8 @@ import {
   AlignCenter,
   FlipHorizontal,
   Trash2,
-  Info,
+  UploadCloud,
+  CheckCircle2,
 } from 'lucide-react';
 import { DeviceConfig, ImageMetadata, ImageTransform } from '../../types/customizer';
 
@@ -21,11 +22,11 @@ interface DesignToolbarProps {
   onFitFull: () => void;
   onRemove: () => void;
   onToggleTransformPanel: () => void;
+  onChangePhotoClick?: () => void;
   isTransformPanelOpen: boolean;
 }
 
 export const DesignToolbar: React.FC<DesignToolbarProps> = ({
-  device,
   uploadedImage,
   imageMetadata,
   transform,
@@ -35,140 +36,108 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   onFitFull,
   onRemove,
   onToggleTransformPanel,
+  onChangePhotoClick,
   isTransformPanelOpen,
 }) => {
   if (!uploadedImage) return null;
 
-  const qualityBadgeColor =
-    imageMetadata?.quality === 'Excelente'
-      ? 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30'
-      : imageMetadata?.quality === 'Buena'
-      ? 'text-green-400 bg-green-500/15 border-green-500/30'
-      : imageMetadata?.quality === 'Aceptable'
-      ? 'text-amber-400 bg-amber-500/15 border-amber-500/30'
-      : 'text-rose-400 bg-rose-500/15 border-rose-500/30';
-
-  const widthCm = ((device.dimensions.realWidthMm || 75) / 10).toFixed(2);
-  const heightCm = ((device.dimensions.realHeightMm || 150) / 10).toFixed(2);
-
   return (
-    <div className="w-full flex flex-col space-y-2 z-30 pointer-events-auto">
-      {/* ========================================================================= */}
-      {/* 1. BARRA SUPERIOR DE ACCIONES RÁPIDAS (Idéntica a la maqueta de referencia) */}
-      {/* ========================================================================= */}
-      <div className="flex items-center justify-between bg-black/70 backdrop-blur-xl border border-white/10 p-1.5 rounded-2xl shadow-lg overflow-x-auto gap-1">
-        <div className="flex items-center space-x-1">
-          {/* Botón Transformar */}
+    <div className="w-full flex flex-col items-center space-y-2 pointer-events-auto">
+      {/* Barra de herramientas flotante de vidrio */}
+      <div className="w-full max-w-md flex items-center justify-between bg-[#0b0d14]/90 backdrop-blur-2xl border border-white/15 p-1 rounded-xl shadow-xl gap-1">
+        <div className="flex items-center space-x-1 overflow-x-auto py-0.5 scrollbar-none w-full justify-around sm:justify-start">
+          {/* Ajustar / Transformar */}
           <button
+            type="button"
             onClick={onToggleTransformPanel}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center space-x-1.5 ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               isTransformPanelOpen
                 ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                : 'text-slate-300 hover:text-white hover:bg-white/10 active:scale-95'
             }`}
-            title="Ajustar escala y rotación fina"
+            title="Ajustar zoom y rotación"
           >
             <Move className="w-3.5 h-3.5" />
-            <span>Transformar</span>
+            <span className="hidden xs:inline">Ajustar</span>
           </button>
 
-          {/* Botón Posición / Centrar */}
+          {/* Centrar */}
           <button
+            type="button"
             onClick={onCenter}
-            className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center space-x-1.5"
-            title="Centrar en el medio de la funda"
+            className="px-2 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+            title="Centrar"
           >
             <AlignCenter className="w-3.5 h-3.5" />
-            <span>Posición</span>
+            <span className="hidden sm:inline">Centrar</span>
           </button>
 
-          {/* Botón Cobertura Total */}
+          {/* Cobertura total */}
           <button
+            type="button"
             onClick={onFitFull}
-            className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center space-x-1.5"
-            title="Ajustar a cobertura total y bordes"
+            className="px-2 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+            title="Ajustar a la funda completa"
           >
             <Maximize2 className="w-3.5 h-3.5" />
-            <span>Ajustar</span>
+            <span className="hidden sm:inline">Llenar</span>
           </button>
 
-          {/* Botón Girar 90° */}
+          {/* Girar 90° */}
           <button
+            type="button"
             onClick={onRotate90}
-            className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all flex items-center space-x-1"
-            title="Girar 90 grados"
+            className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+            title="Girar 90°"
           >
             <RotateCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Girar</span>
           </button>
 
-          {/* Botón Voltear Horizontal */}
+          {/* Espejo / Flip */}
           <button
+            type="button"
             onClick={onFlipH}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center space-x-1 ${
+            className={`p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 flex-shrink-0 ${
               transform.flipH
                 ? 'bg-white/20 text-white font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-white/10'
+                : 'text-slate-300 hover:text-white hover:bg-white/10 active:scale-95'
             }`}
-            title="Efecto espejo horizontal"
+            title="Efecto espejo"
           >
             <FlipHorizontal className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Voltear</span>
+          </button>
+
+          {/* Cambiar foto */}
+          {onChangePhotoClick && (
+            <button
+              type="button"
+              onClick={onChangePhotoClick}
+              className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+              title="Cambiar foto"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-indigo-400" />
+            </button>
+          )}
+
+          {/* Eliminar foto */}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 active:scale-95 transition-all flex-shrink-0"
+            title="Eliminar foto"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
-
-        {/* Botón Eliminar Foto */}
-        <button
-          onClick={onRemove}
-          className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all ml-1 flex-shrink-0"
-          title="Eliminar foto"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. TARJETA DE INFORMACIÓN DEL ARCHIVO Y DPI (Estilo Imagen de Referencia)   */}
-      {/* ========================================================================= */}
-      <div className="flex flex-wrap items-center justify-between bg-black/60 backdrop-blur-xl border border-white/10 px-3.5 py-2 rounded-2xl shadow-md gap-2 text-xs">
-        <div className="flex items-center space-x-3">
-          {/* Miniatura de la imagen subida */}
-          <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20 flex-shrink-0 bg-slate-900 shadow-sm">
-            <img
-              src={uploadedImage}
-              alt="Miniatura"
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-1.5 text-slate-200 font-medium truncate max-w-[140px] sm:max-w-[200px]">
-              <span className="text-[11px] text-slate-400">Archivo:</span>
-              <span className="truncate text-white font-semibold">
-                {imageMetadata?.fileName || 'foto_personalizada.jpg'}
-              </span>
-            </div>
-
-            <div className="text-[10px] text-slate-400">
-              Anchura: <span className="text-slate-200">{widthCm} cm</span> · Altura:{' '}
-              <span className="text-slate-200">{heightCm} cm</span>
-            </div>
-          </div>
+      {/* Pill informativa discreta sobre la calidad */}
+      {imageMetadata && (
+        <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-black/50 backdrop-blur-md px-3 py-0.5 rounded-md border border-white/10">
+          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          <span>Calidad: <strong className="text-slate-200">{imageMetadata.quality}</strong> ({imageMetadata.dpi} DPI)</span>
         </div>
-
-        {/* Indicador de Calidad y DPI */}
-        <div className="flex items-center space-x-2">
-          <div
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-sm ${qualityBadgeColor}`}
-          >
-            <span>
-              Calidad: <span className="font-bold">{imageMetadata?.quality || 'Buena'}</span> /{' '}
-              {imageMetadata?.dpi || 280} DPI
-            </span>
-            <Info className="w-3 h-3 ml-0.5 opacity-70" />
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

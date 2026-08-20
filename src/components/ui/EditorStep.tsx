@@ -48,7 +48,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
   onSelectCaseStyle,
   onOpenOrderModal,
 }) => {
-  // Modo de visualización: '2d' por defecto (solicitado por el usuario), '3d' opcional
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   const [is3dAutoRotating, setIs3dAutoRotating] = useState(false);
   const [activePanel, setActivePanel] = useState<'design' | 'style'>('design');
@@ -57,11 +56,8 @@ export const EditorStep: React.FC<EditorStepProps> = ({
 
   return (
     <div className="w-full h-screen flex flex-col md:flex-row overflow-hidden relative">
-      {/* ===== ÁREA DE VISUALIZACIÓN (2D / 3D) ===== */}
       <div className="relative flex-1 h-[50vh] md:h-full w-full bg-[#07080c]/30 backdrop-blur-sm flex items-center justify-center overflow-hidden">
-        {/* Barra superior flotante con Volver y Switcher 2D / 3D */}
         <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
-          {/* Botón Volver / Cambiar modelo */}
           <button
             onClick={onBackToSelection}
             className="pointer-events-auto flex items-center space-x-1.5 px-3 py-2 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-slate-200 border border-white/10 backdrop-blur-xl transition-colors text-xs font-medium shadow-md"
@@ -70,7 +66,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
             <span>{device.name}</span>
           </button>
 
-          {/* Selector de modo 2D / 3D estilo iOS Glass */}
           <div className="pointer-events-auto flex items-center bg-white/[0.08] p-1 rounded-full border border-white/10 backdrop-blur-xl shadow-md">
             <button
               onClick={() => setViewMode('2d')}
@@ -97,7 +92,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
           </div>
         </div>
 
-        {/* Visualizador condicional 2D o 3D */}
         {viewMode === '2d' ? (
           <div className="w-full h-full flex items-center justify-center animate-fade-in">
             <PhoneCase2D
@@ -109,7 +103,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
           </div>
         ) : (
           <div className="w-full h-full relative animate-fade-in">
-            {/* Controles de cámara para la vista 3D */}
             <ViewControls
               isAutoRotating={is3dAutoRotating}
               onToggleAutoRotate={() => setIs3dAutoRotating(!is3dAutoRotating)}
@@ -126,7 +119,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
               }}
             />
 
-            {/* Pista de giro 3D */}
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none flex items-center space-x-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-slate-300 text-[11px]">
               <Rotate3d className="w-3.5 h-3.5 text-slate-300" />
               <span>Arrastrá para girar en 3D</span>
@@ -135,9 +127,7 @@ export const EditorStep: React.FC<EditorStepProps> = ({
         )}
       </div>
 
-      {/* ===== PANEL DE CONTROLES (ESTILO iOS GLASS) ===== */}
       <div className="w-full md:w-[420px] lg:w-[450px] bg-[#12141c]/95 md:bg-[#12141c]/80 backdrop-blur-2xl border-t md:border-t-0 md:border-l border-white/10 flex flex-col justify-between overflow-hidden shadow-2xl z-20 h-[50vh] md:h-full">
-        {/* Pestañas superiores del panel */}
         <div className="p-3 border-b border-white/10 flex items-center space-x-2 bg-white/[0.02]">
           <button
             onClick={() => setActivePanel('design')}
@@ -163,7 +153,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
           </button>
         </div>
 
-        {/* Contenido scrolleable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {activePanel === 'design' ? (
             <div className="space-y-4 animate-fade-in">
@@ -192,7 +181,6 @@ export const EditorStep: React.FC<EditorStepProps> = ({
           )}
         </div>
 
-        {/* Botón principal CTA al fondo */}
         <div className="p-4 border-t border-white/10 bg-white/[0.02]">
           <button
             onClick={onOpenOrderModal}

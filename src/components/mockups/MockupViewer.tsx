@@ -30,11 +30,7 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col md:flex-row items-center justify-between gap-4 p-3 sm:p-5 relative select-none">
-      {/* ========================================================================= */}
-      {/* 1. SELECTOR DE MAQUETAS EN MINIATURA (Estilo Printful / Maqueta del usuario) */}
-      {/* ========================================================================= */}
       <div className="flex md:flex-col items-center gap-2.5 z-30 order-2 md:order-1 overflow-x-auto max-w-full py-1">
-        {/* Miniatura 1: Maqueta 3 en 1 (Exacta a la imagen enviada por el usuario) */}
         <button
           type="button"
           onClick={() => setActiveMockup('composite-3in1')}
@@ -43,22 +39,21 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
               ? 'bg-indigo-600/30 border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg'
               : 'bg-white/[0.04] border-white/10 hover:bg-white/10'
           }`}
-          title="Maqueta 3 en 1 (Trasera, lateral e inferior)"
+          title="Maqueta 3 en 1"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#12131a] flex items-center justify-center overflow-hidden relative shadow-inner p-1">
             <img
-              src="/mockups/iphone_mockup_template.png"
-              alt="3 en 1"
+              src={device.mockupImagePath || '/MockupsV2/Iphone16/Iphone16pro.png'}
+              alt="Maqueta"
               className="w-full h-full object-contain group-hover:scale-105 transition-transform"
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
           </div>
-          <span className="text-[10px] text-slate-300 font-medium mt-1">Maqueta 3 en 1</span>
+          <span className="text-[10px] text-slate-300 font-medium mt-1">Funda Real</span>
         </button>
 
-        {/* Miniatura 2: Perspectiva 3D Hero */}
         <button
           type="button"
           onClick={() => setActiveMockup('hero-perspective')}
@@ -67,7 +62,7 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
               ? 'bg-indigo-600/30 border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg'
               : 'bg-white/[0.04] border-white/10 hover:bg-white/10'
           }`}
-          title="Perspectiva 3D con luz de estudio"
+          title="Perspectiva"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#12131a] flex items-center justify-center overflow-hidden relative shadow-inner">
             <Smartphone className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform" />
@@ -75,7 +70,6 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
           <span className="text-[10px] text-slate-300 font-medium mt-1">Perspectiva</span>
         </button>
 
-        {/* Miniatura 3: 3D Interactivo 360° */}
         <button
           type="button"
           onClick={() => setActiveMockup('interactive-3d')}
@@ -84,7 +78,7 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
               ? 'bg-indigo-600/30 border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg'
               : 'bg-white/[0.04] border-white/10 hover:bg-white/10'
           }`}
-          title="Giro libre en 360 grados"
+          title="Giro 360°"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#12131a] flex items-center justify-center overflow-hidden relative shadow-inner">
             <Rotate3d className="w-6 h-6 text-indigo-400 group-hover:rotate-45 transition-transform" />
@@ -92,7 +86,6 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
           <span className="text-[10px] text-slate-300 font-medium mt-1">Giro 360°</span>
         </button>
 
-        {/* Miniatura 4: Lifestyle Maqueta */}
         <button
           type="button"
           onClick={() => setActiveMockup('lifestyle')}
@@ -101,7 +94,7 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
               ? 'bg-indigo-600/30 border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg'
               : 'bg-white/[0.04] border-white/10 hover:bg-white/10'
           }`}
-          title="Maqueta estilo vida real"
+          title="Lifestyle"
         >
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-[#12131a] flex items-center justify-center overflow-hidden relative shadow-inner">
             <Sparkles className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
@@ -110,12 +103,8 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
         </button>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. ÁREA PRINCIPAL DE RENDERIZADO DE LA MAQUETA SELECCIONADA                */}
-      {/* ========================================================================= */}
       <div className="flex-1 w-full h-full flex items-center justify-center relative order-1 md:order-2 overflow-hidden min-h-[300px]">
         <AnimatePresence mode="wait">
-          {/* VISTA 1: MAQUETA 3 EN 1 (Exacta a la imagen de referencia del usuario) */}
           {activeMockup === 'composite-3in1' && (
             <motion.div
               key="composite-mockup"
@@ -139,7 +128,6 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
             </motion.div>
           )}
 
-          {/* VISTA 2: HERO PERSPECTIVE 3D RENDER */}
           {activeMockup === 'hero-perspective' && (
             <motion.div
               key="hero-mockup"
@@ -173,7 +161,6 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
             </motion.div>
           )}
 
-          {/* VISTA 3: 3D INTERACTIVO 360° */}
           {activeMockup === 'interactive-3d' && (
             <motion.div
               key="interactive-3d-mockup"
@@ -200,7 +187,6 @@ export const MockupViewer: React.FC<MockupViewerProps> = ({
             </motion.div>
           )}
 
-          {/* VISTA 4: MAQUETA LIFESTYLE */}
           {activeMockup === 'lifestyle' && (
             <motion.div
               key="lifestyle-mockup"

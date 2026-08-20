@@ -15,12 +15,10 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
   const [phase, setPhase] = useState<'entering' | 'exiting' | 'done'>('entering');
 
   useEffect(() => {
-    // Fase 1: Entrada y permanencia
     const exitTimer = setTimeout(() => {
       setPhase('exiting');
     }, durationMs - 800);
 
-    // Fase 2: Finalización y transición al menú
     const doneTimer = setTimeout(() => {
       setPhase('done');
       onComplete();
@@ -48,7 +46,6 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
           onComplete();
         }}
       >
-        {/* Halo de luz suave animado en el fondo */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{
@@ -59,7 +56,6 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
           className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-indigo-600/30 via-purple-500/20 to-transparent blur-3xl pointer-events-none"
         />
 
-        {/* Logo con zoom fluido desde el centro */}
         <motion.div
           initial={{ scale: 0.55, opacity: 0, filter: 'blur(8px)' }}
           animate={
@@ -86,12 +82,10 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
             alt="Logo"
             className="w-auto h-16 sm:h-20 md:h-24 object-contain brightness-0 invert drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]"
             onError={(e) => {
-              // Fallback estilizado si la imagen no carga
               (e.target as HTMLElement).style.display = 'none';
             }}
           />
 
-          {/* Línea de brillo sutil debajo del logo */}
           <motion.div
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: '120px', opacity: 0.7 }}
@@ -109,7 +103,6 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
           </motion.span>
         </motion.div>
 
-        {/* Indicador discreto para saltar */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}

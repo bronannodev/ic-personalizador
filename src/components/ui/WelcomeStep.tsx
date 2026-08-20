@@ -30,7 +30,6 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
   return (
     <div className="w-full max-w-lg mx-auto px-4 py-8 sm:py-12 flex flex-col justify-between min-h-screen">
       <div className="space-y-6">
-        {/* Encabezado minimalista con logo blanco sin caja */}
         <div className="text-center space-y-3 pt-2 flex flex-col items-center">
           <img
             src="/logo.webp"
@@ -50,7 +49,6 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
           </div>
         </div>
 
-        {/* Selector de marca tipo Glass iOS */}
         <div className="space-y-3">
           <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
             Marca
@@ -75,7 +73,6 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
           </div>
         </div>
 
-        {/* Buscador de modelos */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -97,7 +94,6 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
             />
           </div>
 
-          {/* Grilla de modelos estilo iOS */}
           <div className="grid grid-cols-1 gap-2 max-h-[42vh] overflow-y-auto pr-1">
             {filteredDevices.map((device) => {
               const isSelected = selectedDevice.id === device.id;
@@ -147,7 +143,6 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({
         </div>
       </div>
 
-      {/* Botón continuar fijo / sticky en la base */}
       <div className="pt-6">
         <button
           onClick={onNextStep}

@@ -18,7 +18,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       onImageUpload(file);
-      // Reset input value to allow uploading the same file again if desired
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }

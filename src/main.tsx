@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-// Generar favicon blanco puro a partir de /logo.webp
 if (typeof window !== 'undefined') {
   const img = new Image();
   img.src = '/logo.webp';
@@ -24,9 +23,7 @@ if (typeof window !== 'undefined') {
         link.href = canvas.toDataURL('image/png');
         document.head.appendChild(link);
       }
-    } catch {
-      // Ignored
-    }
+    } catch {}
   };
 }
 

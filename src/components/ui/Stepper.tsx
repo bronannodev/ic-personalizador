@@ -81,9 +81,8 @@ export default function Stepper({
 
   return (
     <div className={`flex w-full flex-col ${className}`}>
-      {/* Contenedor de indicadores de paso estilo iOS Glass con alto contraste */}
       <div
-        className={`w-full max-w-xl mx-auto rounded-3xl backdrop-blur-2xl bg-[#10121a]/90 border border-white/15 shadow-2xl p-4 sm:p-6 ${stepCircleContainerClassName}`}
+        className={`w-full max-w-xl mx-auto rounded-xl backdrop-blur-2xl bg-[#10121a]/90 border border-white/15 shadow-2xl p-4 sm:p-6 ${stepCircleContainerClassName}`}
       >
         <div className={`${stepContainerClassName} flex w-full items-center justify-between px-1 sm:px-4 mb-5`}>
           {stepsArray.map((_, index) => {
@@ -135,7 +134,6 @@ export default function Stepper({
           })}
         </div>
 
-        {/* Contenido del paso actual */}
         <StepContentWrapper
           isCompleted={isCompleted}
           currentStep={currentStep}
@@ -145,7 +143,6 @@ export default function Stepper({
           {stepsArray[currentStep - 1]}
         </StepContentWrapper>
 
-        {/* Navegación inferior */}
         {!isCompleted && (
           <div className={`mt-6 pt-4 border-t border-white/10 ${footerClassName}`}>
             <div
@@ -157,7 +154,7 @@ export default function Stepper({
                 <button
                   type="button"
                   onClick={handleBack}
-                  className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                  className={`px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                     currentStep === 1
                       ? 'pointer-events-none opacity-40 text-slate-500'
                       : 'text-slate-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.12] border border-white/10'
@@ -170,7 +167,7 @@ export default function Stepper({
               <button
                 type="button"
                 onClick={isLastStep ? handleComplete : handleNext}
-                className="flex items-center justify-center rounded-2xl bg-white text-slate-950 px-6 py-3 font-semibold text-xs sm:text-sm shadow-lg shadow-white/10 hover:bg-slate-100 active:scale-[0.99] transition-all"
+                className="flex items-center justify-center rounded-lg bg-white text-slate-950 px-6 py-2.5 font-semibold text-xs sm:text-sm shadow-md hover:bg-slate-100 active:scale-[0.99] transition-all"
                 {...nextButtonProps}
               >
                 {isLastStep ? 'Finalizar' : nextButtonText}
@@ -300,14 +297,14 @@ function StepIndicator({
       <motion.div
         variants={{
           inactive: { scale: 1, backgroundColor: 'rgba(255, 255, 255, 0.08)', color: '#94a3b8' },
-          active: { scale: 1.1, backgroundColor: '#6366f1', color: '#ffffff' },
+          active: { scale: 1.05, backgroundColor: '#6366f1', color: '#ffffff' },
           complete: { scale: 1, backgroundColor: '#4f46e5', color: '#ffffff' },
         }}
         transition={{ duration: 0.3 }}
-        className="flex h-8 w-8 items-center justify-center rounded-full font-semibold text-xs shadow-md"
+        className="flex h-7 w-7 items-center justify-center rounded-lg font-medium text-xs shadow-sm"
       >
         {status === 'complete' ? (
-          <CheckIcon className="h-4 w-4 text-white" />
+          <CheckIcon className="h-3.5 w-3.5 text-white" />
         ) : (
           <span>{step}</span>
         )}

@@ -8,7 +8,6 @@ interface PhoneGeometryProps {
   customTexture: THREE.CanvasTexture | null;
 }
 
-// Helper para crear forma de rectángulo redondeado 2D
 function createRoundedRectShape(
   width: number,
   height: number,
@@ -40,7 +39,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
   const { width, height, depth, cornerRadius } = device.dimensions;
   const camera = device.camera;
 
-  // 1. Geometría del cuerpo del teléfono
   const phoneBodyGeometry = useMemo(() => {
     const shape = createRoundedRectShape(width, height, cornerRadius);
     const extrudeSettings: THREE.ExtrudeGeometryOptions = {
@@ -57,7 +55,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
     return geom;
   }, [width, height, depth, cornerRadius]);
 
-  // 2. Geometría de la pantalla frontal
   const screenGeometry = useMemo(() => {
     const sWidth = width - 0.12;
     const sHeight = height - 0.12;
@@ -66,7 +63,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
     return geom;
   }, [width, height, cornerRadius]);
 
-  // 3. Geometría del marco / funda externa (Case)
   const caseGeometry = useMemo(() => {
     const caseWidth = width + 0.12;
     const caseHeight = height + 0.12;
@@ -86,14 +82,12 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
     return geom;
   }, [width, height, depth, cornerRadius]);
 
-  // 4. Geometría de la superficie trasera personalizable (con UVs mapeadas de 0 a 1)
   const backPlateGeometry = useMemo(() => {
     const pWidth = width + 0.08;
     const pHeight = height + 0.08;
     const shape = createRoundedRectShape(pWidth, pHeight, cornerRadius + 0.02);
     const geom = new THREE.ShapeGeometry(shape, 24);
 
-    // Ajustar coordenadas UV manualmente para que la imagen quede perfectamente centrada y derecha
     const pos = geom.attributes.position;
     const uvs: number[] = [];
     for (let i = 0; i < pos.count; i++) {
@@ -107,7 +101,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
     return geom;
   }, [width, height, cornerRadius]);
 
-  // 5. Geometría de la isla de cámaras
   const cameraBumpGeometry = useMemo(() => {
     const shape = createRoundedRectShape(
       camera.width,
@@ -128,39 +121,32 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
     return geom;
   }, [camera]);
 
-  // Posiciones de lentes según el tipo de cámara
   const lensPositions = useMemo(() => {
     const positions: [number, number, number][] = [];
     const zOffset = camera.depth / 2 + 0.02;
 
     if (camera.type === 'triple-pro-large' || camera.type === 'triple-pro-classic') {
-      // Distribución triangular Pro (iPhone 16 Pro / 15 Pro / 14 Pro / 13 Pro / 12 Pro)
       const r = camera.type === 'triple-pro-large' ? 0.3 : 0.26;
       positions.push([-r, r - 0.05, zOffset]);
       positions.push([-r, -r + 0.05, zOffset]);
       positions.push([r - 0.05, 0, zOffset]);
     } else if (camera.type === 'diagonal-dual') {
-      // Distribución diagonal estándar (iPhone 15 / 14 / 13)
       const r = 0.24;
       positions.push([-r, r, zOffset]);
       positions.push([r, -r, zOffset]);
     } else if (camera.type === 'vertical-pill-modern' || camera.type === 'vertical-pill-classic' || camera.type === 'vertical-dual-square') {
-      // Distribución vertical dual (iPhone 16, X, XS, 12, 11)
       const step = 0.26;
       positions.push([0, step, zOffset]);
       positions.push([0, -step, zOffset]);
     } else if (camera.type === 'single-lens') {
-      // Lente única (iPhone XR, SE)
       positions.push([0, 0, zOffset]);
     } else if (camera.type === 'vertical-quad') {
-      // Distribución vertical cuádruple (Samsung Galaxy S24 Ultra)
       const step = 0.42;
       positions.push([-0.18, 0.65, zOffset]);
       positions.push([-0.18, 0.65 - step, zOffset]);
       positions.push([-0.18, 0.65 - step * 2, zOffset]);
-      positions.push([0.22, 0.65 - step * 0.6, zOffset]); // Lente periscopio
+      positions.push([0.22, 0.65 - step * 0.6, zOffset]);
     } else {
-      // Distribución vertical triple (Samsung Galaxy S24 / S23)
       const step = 0.42;
       positions.push([0, step, zOffset]);
       positions.push([0, 0, zOffset]);
@@ -169,12 +155,10 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
     return positions;
   }, [camera]);
 
-  // Color del marco del teléfono (Titanio oscuro / aluminio pulido)
   const phoneChassisColor = device.brand === 'apple' ? '#26282e' : '#1e2026';
 
   return (
     <group position={[0, 0, 0]}>
-      {/* ===== CUERPO DEL TELÉFONO (Chassis) ===== */}
       <mesh geometry={phoneBodyGeometry} castShadow receiveShadow>
         <meshStandardMaterial
           color={phoneChassisColor}
@@ -183,7 +167,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
         />
       </mesh>
 
-      {/* ===== PANTALLA FRONTAL (OLED con reflejo) ===== */}
       <mesh
         geometry={screenGeometry}
         position={[0, 0, -depth / 2 - 0.041]}
@@ -198,13 +181,11 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
         />
       </mesh>
 
-      {/* Dynamic Island / Cámara frontal (sutil) */}
       <mesh position={[0, height / 2 - 0.35, -depth / 2 - 0.043]}>
         <capsuleGeometry args={[0.04, 0.16, 8, 12]} />
         <meshBasicMaterial color="#000000" />
       </mesh>
 
-      {/* ===== FUNDA EXTERNA (Case Sides & Frame) ===== */}
       <mesh geometry={caseGeometry} castShadow receiveShadow>
         <meshPhysicalMaterial
           color={caseStyle.color}
@@ -219,7 +200,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
         />
       </mesh>
 
-      {/* ===== SUPERFICIE TRASERA PERSONALIZADA CON TEXTURA DEL USUARIO ===== */}
       <mesh
         geometry={backPlateGeometry}
         position={[0, 0, depth / 2 + 0.043]}
@@ -237,9 +217,7 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
         />
       </mesh>
 
-      {/* ===== MÓDULO DE CÁMARAS TRASERAS ===== */}
       <group position={camera.position}>
-        {/* Base de la isla de cámaras */}
         <mesh geometry={cameraBumpGeometry} castShadow receiveShadow>
           <meshPhysicalMaterial
             color={device.brand === 'apple' ? '#1c1d22' : '#22252a'}
@@ -249,10 +227,8 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
           />
         </mesh>
 
-        {/* Lentes de cámara individuales */}
         {lensPositions.map((pos, idx) => (
           <group key={idx} position={pos}>
-            {/* Anillo exterior de metal */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.13, 0.13, 0.04, 24]} />
               <meshStandardMaterial
@@ -262,7 +238,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
               />
             </mesh>
 
-            {/* Cristal óptico de la lente */}
             <mesh position={[0, 0, 0.021]} rotation={[Math.PI / 2, 0, 0]}>
               <cylinderGeometry args={[0.105, 0.105, 0.01, 24]} />
               <meshPhysicalMaterial
@@ -274,7 +249,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
               />
             </mesh>
 
-            {/* Reflejo azul/morado sutil del tratamiento antirreflejo */}
             <mesh position={[0, 0, 0.023]} rotation={[Math.PI / 2, 0, 0]}>
               <circleGeometry args={[0.06, 16]} />
               <meshBasicMaterial
@@ -286,7 +260,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
           </group>
         ))}
 
-        {/* Flash LED */}
         {camera.hasFlash && (
           <mesh
             position={[
@@ -305,7 +278,6 @@ export const PhoneGeometry: React.FC<PhoneGeometryProps> = ({
           </mesh>
         )}
 
-        {/* Sensor LiDAR */}
         {camera.hasLidar && (
           <mesh position={[0.22, -0.32, camera.depth / 2 + 0.01]}>
             <circleGeometry args={[0.05, 16]} />

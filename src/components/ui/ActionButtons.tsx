@@ -14,7 +14,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   return (
     <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-surface-border p-3 flex flex-col gap-2">
-      {/* Botón principal CTA */}
       <button
         onClick={onOpenOrderModal}
         className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand to-indigo-600 hover:from-brand-hover hover:to-indigo-500 active:scale-[0.99] text-white font-semibold text-sm sm:text-base flex items-center justify-center space-x-2 shadow-lg shadow-brand/25 transition-all"
@@ -23,7 +22,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         <span>Quiero esta funda</span>
       </button>
 
-      {/* Navegación por pestañas de configuración */}
       <div className="grid grid-cols-3 gap-1 bg-surface-muted/60 p-1 rounded-xl border border-surface-border">
         <button
           onClick={() => onTabChange('device')}

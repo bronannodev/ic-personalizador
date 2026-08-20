@@ -1,21 +1,28 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useCustomizerState } from './hooks/useCustomizerState';
 import { PhoneCase2D } from './components/2d/PhoneCase2D';
 import { DesignToolbar } from './components/2d/DesignToolbar';
 import { CompositeMockup } from './components/mockups/CompositeMockup';
 import { BrandAndModelSelector } from './components/ui/BrandAndModelSelector';
-import { ImageUploader } from './components/ui/ImageUploader';
 import { TransformControls } from './components/ui/TransformControls';
 import { MoltenMetal } from './components/ui/MoltenMetal';
 import { IntroSplash } from './components/intro/IntroSplash';
-import Stepper, { Step } from './components/ui/Stepper';
-import { ImagePlus, Smartphone, Eye, RotateCcw } from 'lucide-react';
+import {
+  Eye,
+  ChevronLeft,
+  ArrowRight,
+  Upload,
+  MessageCircle,
+  RotateCcw,
+  Download,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export function App() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [activeStep, setActiveStep] = useState<number>(1);
   const [isTransformPanelOpen, setIsTransformPanelOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     state,
@@ -29,38 +36,72 @@ export function App() {
     centerPosition,
     fitToFullCoverage,
     resetTransform,
+    exportPreviewImage,
   } = useCustomizerState();
 
-  const isStep1 = activeStep === 1;
-
-  // Determinar qué se muestra en el visor según el paso activo
-  const showMockupPreview = activeStep === 3;
-  const showEditor = activeStep === 2;
-
-  // Labels y botones del stepper
-  const stepLabels = ['Celular', 'Diseño', 'Resultado'];
-
-  const getNextButtonText = () => {
-    switch (activeStep) {
-      case 2:
-        return 'Ver funda terminada';
-      case 3:
-        return 'Volver al paso 1';
-      default:
-        return 'Continuar';
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
-  // En el paso 3, el botón final reinicia al paso 1
-  const handleFinalStep = () => {
-    setActiveStep(1);
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleWhatsAppOrder = async () => {
+    const message = `Hola! Quiero encargar la funda personalizada para *${state.selectedDevice.name}* (Marca: ${state.selectedBrand.toUpperCase()}). ¿Que precio tiene?`;
+    const defaultWhatsAppNumber = '5491123456789';
+
+    const previewUrl = exportPreviewImage();
+
+    if (previewUrl && navigator.canShare) {
+      try {
+        const res = await fetch(previewUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `funda-${state.selectedDevice.id}.jpg`, { type: 'image/jpeg' });
+
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `Funda ${state.selectedDevice.name}`,
+            text: message,
+            files: [file],
+          });
+          return;
+        }
+      } catch {
+        // Fallback a enlace directo si el usuario cancela o no es compatible
+      }
+    }
+
+    const whatsappUrl = `https://wa.me/${defaultWhatsAppNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleDownloadPreview = () => {
+    const previewUrl = exportPreviewImage();
+    if (previewUrl) {
+      const link = document.createElement('a');
+      link.href = previewUrl;
+      link.download = `funda-${state.selectedDevice.id}.jpg`;
+      link.click();
+    }
   };
 
   return (
-    <div className="relative flex flex-col min-h-screen w-full bg-[#07080c] text-slate-100 font-sans selection:bg-white/20 overflow-x-hidden">
-      {/* ========================================================================= */}
-      {/* ANIMACIÓN DE ENTRADA: ZOOM FLUIDO DEL LOGO DESDE EL CENTRO                 */}
-      {/* ========================================================================= */}
+    <div className="relative flex flex-col h-screen w-full bg-[#07080c] text-slate-100 font-sans selection:bg-white/20 overflow-hidden select-none">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
       {showSplash && (
         <IntroSplash
           logoSrc="/logo.webp"
@@ -69,7 +110,7 @@ export function App() {
         />
       )}
 
-      {/* Fondo animado fluido MoltenMetal */}
+      {/* Fondo animado fluido */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-25">
         <MoltenMetal
           color1="#181135"
@@ -96,150 +137,127 @@ export function App() {
 
       <AnimatePresence mode="wait">
         {/* ========================================================================= */}
-        {/* PANTALLA INICIAL (PASO 1): LOGO + TEXTO + SELECCIÓN DE MARCA Y MODELO     */}
+        {/* PASO 1: SELECCIÓN DE MARCA Y MODELO                                       */}
         {/* ========================================================================= */}
-        {isStep1 ? (
+        {activeStep === 1 && (
           <motion.div
             key="step1-screen"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.4 }}
-            className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12 min-h-screen max-w-lg mx-auto w-full"
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={{ duration: 0.25 }}
+            className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto max-w-lg mx-auto w-full min-h-screen"
           >
-            {/* Logo en el centro con filtro blanco */}
-            <motion.img
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              src="/logo.webp"
-              alt="Logo"
-              className="h-10 sm:h-12 w-auto object-contain brightness-0 invert opacity-95 mb-5 hover:opacity-100 transition-opacity"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+            <div className="w-full bg-[#10121a]/90 backdrop-blur-2xl border border-white/15 rounded-xl shadow-2xl p-5 sm:p-6 flex flex-col items-center space-y-4">
+              <img
+                src="/logo.webp"
+                alt="Logo"
+                className="h-9 sm:h-11 w-auto object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
 
-            {/* Texto minimalista */}
-            <div className="text-center space-y-1 mb-6">
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-                Personalizá tu funda
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Elegí tu modelo de celular para comenzar a diseñar
-              </p>
-            </div>
+              <div className="text-center space-y-1">
+                <h1 className="text-xl font-semibold tracking-tight text-white">
+                  Personalizá tu funda
+                </h1>
+                <p className="text-xs text-slate-400">
+                  Elegí el modelo de tu celular para comenzar a diseñar
+                </p>
+              </div>
 
-            {/* Stepper centrado (Paso 1: Marca y Modelo) */}
-            <div className="w-full">
-              <Stepper
-                currentStep={1}
-                stepLabels={stepLabels}
-                backButtonText="Anterior"
-                nextButtonText="Continuar al diseño"
-                onStepChange={(step) => setActiveStep(step)}
-              >
-                <Step>
-                  <BrandAndModelSelector
-                    selectedBrand={state.selectedBrand}
-                    selectedDevice={state.selectedDevice}
-                    onSelectBrand={handleSelectBrand}
-                    onSelectDevice={handleSelectDevice}
-                  />
-                </Step>
-                <Step>
-                  <div />
-                </Step>
-                <Step>
-                  <div />
-                </Step>
-              </Stepper>
+              <div className="w-full pt-1">
+                <BrandAndModelSelector
+                  selectedBrand={state.selectedBrand}
+                  selectedDevice={state.selectedDevice}
+                  onSelectBrand={handleSelectBrand}
+                  onSelectDevice={handleSelectDevice}
+                />
+              </div>
+
+              <div className="w-full pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(2)}
+                  className="w-full py-3 px-5 rounded-lg bg-white text-slate-950 hover:bg-slate-100 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                >
+                  <span>Continuar al diseño</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </motion.div>
-        ) : (
-          /* ========================================================================= */
-          /* PANTALLA DE EDICIÓN (PASOS 2 Y 3)                                         */
-          /* ========================================================================= */
+        )}
+
+        {/* ========================================================================= */}
+        {/* PASO 2: EDITOR DE DISEÑO                                                  */}
+        {/* ========================================================================= */}
+        {activeStep === 2 && (
           <motion.div
-            key="editor-screen"
+            key="step2-editor"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.35 }}
-            className="relative z-10 flex-1 w-full flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-screen"
+            transition={{ duration: 0.25 }}
+            className="relative z-10 w-full h-full flex flex-col justify-between overflow-hidden"
           >
-            {/* ===== ÁREA DEL VISOR ===== */}
-            <section className="relative w-full h-[54vh] sm:h-[58vh] md:h-screen md:flex-1 bg-[#090b12]/85 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-5 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 flex-shrink-0">
-              {/* Barra superior de control del visor */}
-              <div className="w-full flex items-center justify-between z-30">
-                {/* Badge del modelo actual */}
-                <div className="flex items-center space-x-2 bg-black/60 px-3 py-1.5 rounded-full border border-white/15 backdrop-blur-xl shadow-md text-xs font-medium text-slate-200">
-                  <Smartphone className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>{state.selectedDevice.name}</span>
-                </div>
+            {/* Top Bar Minimalista */}
+            <header className="w-full z-30 px-3 sm:px-6 pt-3 flex items-center justify-between pointer-events-none">
+              <button
+                type="button"
+                onClick={() => setActiveStep(1)}
+                className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-slate-200 border border-white/15 backdrop-blur-xl transition-all text-xs font-medium shadow-md active:scale-95"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden xs:inline">Cambiar</span>
+                <span className="font-semibold text-white">{state.selectedDevice.name}</span>
+              </button>
 
-                {/* Indicador del modo actual */}
-                <div className="flex items-center bg-black/60 px-3 py-1.5 rounded-full border border-white/15 backdrop-blur-xl shadow-lg">
-                  {showMockupPreview ? (
-                    <div className="flex items-center space-x-1.5 text-xs font-medium text-emerald-400">
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Funda terminada</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-1.5 text-xs font-medium text-slate-300">
-                      <ImagePlus className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Editor de diseño</span>
-                    </div>
-                  )}
-                </div>
+              <div className="pointer-events-auto flex items-center space-x-2 bg-black/70 px-3 py-1.5 rounded-lg border border-white/15 backdrop-blur-xl shadow-md text-xs">
+                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                <span className="text-slate-300 font-medium">Editor 2D</span>
               </div>
+            </header>
 
-              {/* Renderizado del Lienzo */}
-              <div className="w-full flex-1 flex items-center justify-center relative overflow-hidden py-1">
-                <AnimatePresence mode="wait">
-                  {showMockupPreview ? (
-                    /* ===== PASO 3: MAQUETA INCRUSTADA ===== */
-                    <motion.div
-                      key="mockup-view"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.4 }}
-                      className="w-full h-full"
-                    >
-                      <CompositeMockup
-                        device={state.selectedDevice}
-                        caseStyle={state.selectedCaseStyle}
-                        uploadedImage={state.uploadedImage}
-                        transform={state.imageTransform}
-                      />
-                    </motion.div>
-                  ) : (
-                    /* ===== PASO 2: EDITOR 2D ===== */
-                    <motion.div
-                      key="editor-view"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full h-full"
-                    >
-                      <PhoneCase2D
-                        device={state.selectedDevice}
-                        caseStyle={state.selectedCaseStyle}
-                        uploadedImage={state.uploadedImage}
-                        transform={state.imageTransform}
-                        onUpdateTransform={updateTransform}
-                        showGuides={true}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+            {/* Lienzo Principal de la Funda */}
+            <main className="relative flex-1 w-full flex items-center justify-center overflow-hidden px-2 py-1">
+              <PhoneCase2D
+                device={state.selectedDevice}
+                caseStyle={state.selectedCaseStyle}
+                uploadedImage={state.uploadedImage}
+                transform={state.imageTransform}
+                onUpdateTransform={updateTransform}
+                onUploadClick={triggerUpload}
+                showGuides={true}
+              />
 
-              {/* Barra inferior de diseño (solo en paso 2) */}
-              {showEditor && (
-                <div className="w-full max-w-lg z-30">
+              {/* Panel flotante de Ajustes/Transformación */}
+              <AnimatePresence>
+                {isTransformPanelOpen && state.uploadedImage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 15, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-80 z-40"
+                  >
+                    <TransformControls
+                      transform={state.imageTransform}
+                      onUpdateTransform={updateTransform}
+                      onRotate90={rotate90}
+                      onReset={resetTransform}
+                      onClose={() => setIsTransformPanelOpen(false)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </main>
+
+            {/* Dock Inferior */}
+            <footer className="w-full z-30 px-3 sm:px-6 pb-3 sm:pb-5 pt-1 flex flex-col items-center gap-2">
+              {state.uploadedImage ? (
+                <div className="w-full max-w-md flex flex-col items-center gap-2">
                   <DesignToolbar
                     device={state.selectedDevice}
                     uploadedImage={state.uploadedImage}
@@ -253,111 +271,125 @@ export function App() {
                     onToggleTransformPanel={() =>
                       setIsTransformPanelOpen(!isTransformPanelOpen)
                     }
+                    onChangePhotoClick={triggerUpload}
                     isTransformPanelOpen={isTransformPanelOpen}
                   />
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(3)}
+                    className="w-full py-3 px-6 rounded-lg bg-white text-slate-950 hover:bg-slate-100 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                  >
+                    <span>Ver funda terminada</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-full max-w-md flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={triggerUpload}
+                    className="flex-1 py-3 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Subir foto o diseño</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(3)}
+                    className="py-3 px-4 rounded-lg bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-medium transition-all"
+                  >
+                    Omitir
+                  </button>
                 </div>
               )}
-            </section>
+            </footer>
+          </motion.div>
+        )}
 
-            {/* ===== ÁREA DEL STEPPER (PASOS 2 Y 3) ===== */}
-            <section className="w-full md:w-[480px] lg:w-[520px] flex-1 md:flex-initial flex flex-col justify-start md:justify-center p-3.5 sm:p-6 md:p-8 overflow-y-auto bg-[#0a0c14]/90 backdrop-blur-3xl z-20">
-              <Stepper
-                currentStep={activeStep}
-                stepLabels={stepLabels}
-                backButtonText="Anterior"
-                nextButtonText={getNextButtonText()}
-                onStepChange={(step) => setActiveStep(step)}
-                onFinalStepCompleted={handleFinalStep}
+        {/* ========================================================================= */}
+        {/* PASO 3: FUNDA TERMINADA / MAQUETA FINAL                                   */}
+        {/* ========================================================================= */}
+        {activeStep === 3 && (
+          <motion.div
+            key="step3-mockup"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="relative z-10 w-full h-full flex flex-col justify-between overflow-hidden"
+          >
+            {/* Top Bar */}
+            <header className="w-full z-30 px-3 sm:px-6 pt-3 flex items-center justify-between pointer-events-none">
+              <button
+                type="button"
+                onClick={() => setActiveStep(2)}
+                className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-slate-200 border border-white/15 backdrop-blur-xl transition-all text-xs font-medium shadow-md active:scale-95"
               >
-                {/* Paso 1 en modo editor: cambiar de celular */}
-                <Step>
-                  <BrandAndModelSelector
-                    selectedBrand={state.selectedBrand}
-                    selectedDevice={state.selectedDevice}
-                    onSelectBrand={handleSelectBrand}
-                    onSelectDevice={handleSelectDevice}
-                  />
-                </Step>
+                <ChevronLeft className="w-4 h-4" />
+                <span>Ajustar diseño</span>
+              </button>
 
-                {/* Paso 2: Subir y Ajustar Foto */}
-                <Step>
-                  <div className="space-y-4">
-                    <div>
-                      <h2 className="text-sm sm:text-base font-semibold text-white flex items-center">
-                        <ImagePlus className="w-4 h-4 mr-2 text-indigo-400" />
-                        Subí tu foto o diseño
-                      </h2>
-                      <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                        Arrastrá sobre la funda para moverla o usá los controles de ajuste
-                      </p>
-                    </div>
+              <div className="pointer-events-auto flex items-center space-x-1.5 bg-black/70 px-3 py-1.5 rounded-lg border border-white/15 backdrop-blur-xl shadow-md text-xs text-emerald-400 font-medium">
+                <Eye className="w-3.5 h-3.5" />
+                <span>{state.selectedDevice.name}</span>
+              </div>
+            </header>
 
-                    <ImageUploader
-                      uploadedImage={state.uploadedImage}
-                      onImageUpload={handleImageUpload}
-                      onRemoveImage={handleRemoveImage}
-                    />
+            {/* Vista de Maqueta Central */}
+            <main className="relative flex-1 w-full flex items-center justify-center overflow-hidden p-2">
+              <div className="w-full max-w-lg h-full flex items-center justify-center">
+                <CompositeMockup
+                  device={state.selectedDevice}
+                  caseStyle={state.selectedCaseStyle}
+                  uploadedImage={state.uploadedImage}
+                  transform={state.imageTransform}
+                />
+              </div>
+            </main>
 
-                    {/* Controles finos de transformación */}
-                    {state.uploadedImage && (
-                      <TransformControls
-                        transform={state.imageTransform}
-                        onUpdateTransform={updateTransform}
-                        onRotate90={rotate90}
-                        onReset={resetTransform}
-                      />
-                    )}
-                  </div>
-                </Step>
+            {/* Acciones directas y minimalistas (Sin modal extra) */}
+            <footer className="w-full z-30 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 flex flex-col items-center gap-2 bg-gradient-to-t from-[#07080c] via-[#07080c]/80 to-transparent">
+              <div className="w-full max-w-md space-y-2">
+                <button
+                  type="button"
+                  onClick={handleWhatsAppOrder}
+                  className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/50 transition-all"
+                >
+                  <MessageCircle className="w-4.5 h-4.5 fill-current" />
+                  <span>Pedir esta funda por WhatsApp</span>
+                </button>
 
-                {/* Paso 3: Funda Terminada (Resultado Final) */}
-                <Step>
-                  <div className="space-y-5">
-                    <div>
-                      <h2 className="text-sm sm:text-base font-semibold text-white flex items-center">
-                        <Eye className="w-4 h-4 mr-2 text-emerald-400" />
-                        Tu funda terminada
-                      </h2>
-                      <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                        Así se verá tu funda personalizada para {state.selectedDevice.name}
-                      </p>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadPreview}
+                    className="flex-1 py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Guardar diseño</span>
+                  </button>
 
-                    {/* Resumen */}
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Modelo</span>
-                        <span className="text-white font-medium">{state.selectedDevice.name}</span>
-                      </div>
-                      <div className="border-t border-white/5" />
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Diseño</span>
-                        <span className="text-white font-medium">
-                          {state.uploadedImage ? 'Imagen cargada' : 'Sin imagen'}
-                        </span>
-                      </div>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(2)}
+                    className="flex-1 py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium transition-all text-center"
+                  >
+                    Ajustar foto
+                  </button>
 
-                    {/* Nota informativa */}
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
-                      <p className="text-[11px] text-emerald-300/90 leading-relaxed">
-                        Si el diseño te gusta, envianoslo y seguimos con tu pedido.
-                      </p>
-                    </div>
-
-                    {/* Botón Volver al Paso 1 */}
-                    <button
-                      type="button"
-                      onClick={() => setActiveStep(1)}
-                      className="w-full flex items-center justify-center space-x-2 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-all"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Volver al paso 1</span>
-                    </button>
-                  </div>
-                </Step>
-              </Stepper>
-            </section>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(1)}
+                    className="py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden xs:inline">Cambiar</span>
+                  </button>
+                </div>
+              </div>
+            </footer>
           </motion.div>
         )}
       </AnimatePresence>

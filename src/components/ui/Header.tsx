@@ -15,7 +15,6 @@ export const Header: React.FC<HeaderProps> = ({ deviceName }) => {
             alt="Logo"
             className="w-full h-full object-contain"
             onError={(e) => {
-              // Fallback si no carga imagen
               (e.target as HTMLElement).style.display = 'none';
             }}
           />

@@ -1,6 +1,6 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { DeviceConfig, CaseStyle, ImageTransform } from '../../types/customizer';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, Sparkles } from 'lucide-react';
 
 interface PhoneCase2DProps {
   device: DeviceConfig;
@@ -8,6 +8,7 @@ interface PhoneCase2DProps {
   uploadedImage: string | null;
   transform: ImageTransform;
   onUpdateTransform?: (updates: Partial<ImageTransform>) => void;
+  onUploadClick?: () => void;
   showGuides?: boolean;
 }
 
@@ -17,9 +18,11 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
   uploadedImage,
   transform,
   onUpdateTransform,
+  onUploadClick,
   showGuides = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number; initX: number; initY: number }>({
     x: 0,
@@ -28,37 +31,55 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
     initY: 0,
   });
 
+  const curPosRef = useRef<{ x: number; y: number }>({ x: transform.x, y: transform.y });
+  const rafRef = useRef<number | null>(null);
+
+  const initialPinchDistRef = useRef<number | null>(null);
+  const initialPinchScaleRef = useRef<number>(1.0);
+
   const [isInteracting, setIsInteracting] = useState(false);
 
-  // Dimensiones reales en mm
+  useEffect(() => {
+    curPosRef.current = { x: transform.x, y: transform.y };
+  }, [transform.x, transform.y]);
+
   const realWidth = device.dimensions.realWidthMm || device.dimensions.width * 25.4;
   const realHeight = device.dimensions.realHeightMm || device.dimensions.height * 25.4;
   const widthRatio = realWidth / realHeight;
 
-  // Fondo de la funda
   const isTransparent = caseStyle.transmission > 0.5;
   const bgColor = isTransparent ? 'rgba(255, 255, 255, 0.12)' : caseStyle.color;
 
-  // Handlers para arrastrar la imagen directamente sobre el lienzo
+  const updateImgStyle = (x: number, y: number, scale: number) => {
+    if (!imgRef.current) return;
+    imgRef.current.style.transform = `translate3d(${x}%, ${y}%, 0) scale(${scale}) rotate(${
+      transform.rotation
+    }deg) scaleX(${transform.flipH ? -1 : 1}) scaleY(${transform.flipV ? -1 : 1})`;
+  };
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (!uploadedImage || !onUpdateTransform) return;
+      if (!uploadedImage) {
+        onUploadClick?.();
+        return;
+      }
+      if (!onUpdateTransform) return;
       isDraggingRef.current = true;
       setIsInteracting(true);
       dragStartRef.current = {
         x: e.clientX,
         y: e.clientY,
-        initX: transform.x,
-        initY: transform.y,
+        initX: curPosRef.current.x,
+        initY: curPosRef.current.y,
       };
       (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     },
-    [uploadedImage, transform.x, transform.y, onUpdateTransform]
+    [uploadedImage, onUpdateTransform, onUploadClick]
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!isDraggingRef.current || !onUpdateTransform || !containerRef.current) return;
+      if (!isDraggingRef.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const deltaX = e.clientX - dragStartRef.current.x;
       const deltaY = e.clientY - dragStartRef.current.y;
@@ -69,25 +90,35 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
       const newX = Math.max(-100, Math.min(100, dragStartRef.current.initX + percentX));
       const newY = Math.max(-100, Math.min(100, dragStartRef.current.initY + percentY));
 
-      onUpdateTransform({ x: Math.round(newX), y: Math.round(newY) });
+      curPosRef.current = { x: newX, y: newY };
+
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        updateImgStyle(newX, newY, transform.scale);
+      });
     },
-    [onUpdateTransform]
+    [transform.scale, transform.rotation, transform.flipH, transform.flipV]
   );
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent) => {
-      isDraggingRef.current = false;
-      setIsInteracting(false);
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsInteracting(false);
+        if (onUpdateTransform) {
+          onUpdateTransform({
+            x: Math.round(curPosRef.current.x),
+            y: Math.round(curPosRef.current.y),
+          });
+        }
+      }
       try {
         (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-      } catch {
-        // Ignored
-      }
+      } catch {}
     },
-    []
+    [onUpdateTransform]
   );
 
-  // Zoom con rueda del ratón
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       if (!uploadedImage || !onUpdateTransform) return;
@@ -99,25 +130,55 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
     [uploadedImage, transform.scale, onUpdateTransform]
   );
 
-  // Radio de curvatura proporcional a las esquinas
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 2 && uploadedImage && onUpdateTransform) {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        initialPinchDistRef.current = dist;
+        initialPinchScaleRef.current = transform.scale;
+      }
+    },
+    [uploadedImage, transform.scale, onUpdateTransform]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (
+        e.touches.length === 2 &&
+        initialPinchDistRef.current !== null &&
+        uploadedImage &&
+        onUpdateTransform
+      ) {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const factor = dist / initialPinchDistRef.current;
+        const newScale = Math.max(
+          0.3,
+          Math.min(3.0, Number((initialPinchScaleRef.current * factor).toFixed(2)))
+        );
+        onUpdateTransform({ scale: newScale });
+      }
+    },
+    [uploadedImage, onUpdateTransform]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    initialPinchDistRef.current = null;
+  }, []);
+
   const cornerRadiusPx = Math.round(device.dimensions.cornerRadius * 60);
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full p-2 sm:p-4 select-none">
-      {/* Texto de guía superior */}
-      {showGuides && (
-        <div className="mb-3 text-center pointer-events-none px-4">
-          <p className="text-xs text-slate-300/90 font-medium tracking-tight">
-            Para lograr una cobertura total, rellena el rectángulo completo (área segura y bordes)
-          </p>
-        </div>
-      )}
-
-      {/* Contenedor central del lienzo con proporciones exactas en mm */}
-      <div className="relative flex items-center justify-center h-[72%] max-h-[380px] sm:max-h-[480px]">
-        {/* ========================================================================= */}
-        {/* ZONA DE COBERTURA TOTAL Y SANGRÍA (Rectángulo exterior rayado)            */}
-        {/* ========================================================================= */}
+    <div
+      className="relative flex flex-col items-center justify-center w-full h-full select-none"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="relative flex items-center justify-center h-[76vh] sm:h-[78vh] md:h-[82vh] max-h-[660px] w-full py-1">
         <div
           ref={containerRef}
           onPointerDown={handlePointerDown}
@@ -125,39 +186,36 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onWheel={handleWheel}
-          className={`relative flex items-center justify-center h-full transition-shadow duration-200 ${
-            uploadedImage ? 'cursor-grab active:cursor-grabbing' : ''
+          className={`relative flex items-center justify-center h-full touch-none ${
+            uploadedImage ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
           }`}
           style={{
             aspectRatio: `${widthRatio}`,
+            maxHeight: '100%',
           }}
         >
-          {/* Franja de sangría superior rayada */}
-          <div className="absolute -top-4 left-0 right-0 h-4 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-75 rounded-t-sm pointer-events-none border-t border-x border-white/20" />
+          {/* Zona de sangría superior e inferior */}
+          <div className="absolute -top-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-t-sm pointer-events-none border-t border-x border-white/20" />
+          <div className="absolute -bottom-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-b-sm pointer-events-none border-b border-x border-white/20" />
 
-          {/* Franja de sangría inferior rayada */}
-          <div className="absolute -bottom-4 left-0 right-0 h-4 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-75 rounded-b-sm pointer-events-none border-b border-x border-white/20" />
-
-          {/* ========================================================================= */}
-          {/* CUERPO DE LA FUNDA (Silhouette & Printable Canvas)                        */}
-          {/* ========================================================================= */}
+          {/* Cuerpo de la Funda */}
           <div
-            className="relative w-full h-full overflow-hidden shadow-2xl transition-all duration-300 border border-white/30"
+            className="relative w-full h-full overflow-hidden shadow-2xl transition-all duration-200 border border-white/30"
             style={{
               borderRadius: `${cornerRadiusPx}px`,
               backgroundColor: bgColor,
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 2px rgba(255, 255, 255, 0.15)',
             }}
           >
-            {/* CAPA DE IMAGEN SUBIDA */}
             {uploadedImage ? (
               <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
                 <img
+                  ref={imgRef}
                   src={uploadedImage}
                   alt="Diseño personalizado"
-                  className="max-w-none transition-transform duration-75 origin-center will-change-transform"
+                  className="max-w-none origin-center will-change-transform"
                   style={{
-                    transform: `translate(${transform.x}%, ${transform.y}%) scale(${
+                    transform: `translate3d(${transform.x}%, ${transform.y}%, 0) scale(${
                       transform.scale
                     }) rotate(${transform.rotation}deg) scaleX(${
                       transform.flipH ? -1 : 1
@@ -170,72 +228,58 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                 />
               </div>
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-400/60 pointer-events-none">
-                <div className="w-full h-full border border-dashed border-white/20 rounded-[inherit] flex flex-col items-center justify-center p-4">
-                  <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center mb-2">
-                    <ImagePlus className="w-4 h-4 text-slate-300" />
+              <div
+                onClick={onUploadClick}
+                className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-300 group hover:bg-white/[0.04] transition-colors"
+              >
+                <div className="w-full h-full border-2 border-dashed border-indigo-400/40 group-hover:border-indigo-400/80 rounded-[inherit] flex flex-col items-center justify-center p-4 transition-all">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/20">
+                    <ImagePlus className="w-7 h-7" />
                   </div>
-                  <span className="text-xs uppercase tracking-wider font-semibold text-slate-300 mb-1">
-                    Cargar Diseño
+                  <span className="text-sm uppercase tracking-wider font-semibold text-white mb-1 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                    Subir foto o diseño
                   </span>
-                  <span className="text-[11px] text-slate-400 max-w-[170px]">
-                    Subí tu foto o diseño desde el menú
+                  <span className="text-xs text-slate-400 max-w-[200px]">
+                    Toca aquí para elegir tu imagen
                   </span>
                 </div>
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* RECORTE EXACTO DEL MÓDULO DE CÁMARAS (Basado en dimensiones milimétricas) */}
-            {/* ========================================================================= */}
+            {/* Agujero de Cámara Vectorial Nítido */}
             <CameraCutoutHole device={device} />
 
-            {/* ========================================================================= */}
-            {/* LÍNEA DE PUNTOS: ÁREA SEGURA DE IMPRESIÓN (Safe Zone)                    */}
-            {/* ========================================================================= */}
+            {/* Guía de Área Segura */}
             {showGuides && (
               <div
-                className="absolute inset-[12px] sm:inset-[14px] border-2 border-dashed border-white/50 pointer-events-none transition-opacity duration-200"
+                className="absolute inset-[12px] sm:inset-[14px] border-2 border-dashed border-white/50 pointer-events-none transition-opacity duration-200 z-10"
                 style={{
                   borderRadius: `${Math.max(8, cornerRadiusPx - 10)}px`,
-                  opacity: isInteracting ? 0.95 : 0.7,
+                  opacity: isInteracting ? 0.95 : 0.65,
                 }}
               />
             )}
 
-            {/* Bisel del borde exterior */}
+            {/* Borde exterior */}
             <div
-              className="absolute inset-0 border-[2px] border-white/20 pointer-events-none"
+              className="absolute inset-0 border-[2px] border-white/20 pointer-events-none z-10"
               style={{
                 borderRadius: `${cornerRadiusPx}px`,
               }}
             />
           </div>
         </div>
-
-        {/* Indicador de llamada lateral: "Área segura de impresión" */}
-        {showGuides && (
-          <div className="absolute -left-32 sm:-left-40 top-1/2 -translate-y-1/2 flex items-center space-x-2 pointer-events-none hidden xs:flex">
-            <span className="text-[11px] font-medium text-slate-300 text-right leading-tight max-w-[80px]">
-              Área segura de impresión
-            </span>
-            <div className="w-8 sm:w-12 border-t border-dashed border-slate-400" />
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-// ============================================================================
-// COMPONENTE DEL RECORTE DE CÁMARA (Cálculo exacto en milímetros)
-// ============================================================================
 const CameraCutoutHole: React.FC<{ device: DeviceConfig }> = ({ device }) => {
   const camera = device.camera;
   const realWidth = device.dimensions.realWidthMm || 75;
   const realHeight = device.dimensions.realHeightMm || 150;
 
-  // Si tenemos dimensiones exactas en mm de dimsensiones.md, calculamos porcentajes exactos
   let leftPercent = 6.5;
   let topPercent = 4.5;
   let widthPercent = 40.0;
@@ -251,7 +295,6 @@ const CameraCutoutHole: React.FC<{ device: DeviceConfig }> = ({ device }) => {
       radiusPercent = (camera.moduleRadius / camera.moduleWidth) * 100;
     }
   } else {
-    // Fallback según tipo de cámara
     const type = camera.type;
     if (type === 'triple-pro-large') {
       leftPercent = 6.5;
@@ -284,7 +327,6 @@ const CameraCutoutHole: React.FC<{ device: DeviceConfig }> = ({ device }) => {
         height: `${heightPercent}%`,
       }}
     >
-      {/* Bloque gris exacto con bordes redondeados y bisel suave */}
       <div
         className="w-full h-full bg-[#7d828f] border border-[#616673] shadow-[inset_0_2px_6px_rgba(0,0,0,0.35)] relative overflow-hidden"
         style={{

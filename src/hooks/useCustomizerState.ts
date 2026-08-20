@@ -38,17 +38,13 @@ export function useCustomizerState() {
   const [activeTab, setActiveTab] = useState<'device' | 'design' | 'style'>('design');
   const [isOrderModalOpen, setIsOrderModalOpen] = useState<boolean>(false);
 
-  // Instancia única del generador de textura
   const textureGeneratorRef = useRef<TextureGenerator | null>(null);
   const [customTexture, setCustomTexture] = useState<THREE.CanvasTexture | null>(null);
 
-  // Inicializar textura en cliente
   useEffect(() => {
     const generator = new TextureGenerator();
     textureGeneratorRef.current = generator;
     setCustomTexture(generator.getTexture());
-
-    // Render inicial
     generator.render(null, DEFAULT_TRANSFORM, CASE_STYLES[0], DEFAULT_DEVICE);
 
     return () => {
@@ -56,19 +52,20 @@ export function useCustomizerState() {
     };
   }, []);
 
-  // Actualizar textura cuando cambie cualquier parámetro
   useEffect(() => {
-    if (textureGeneratorRef.current) {
-      textureGeneratorRef.current.render(
-        uploadedImageElement,
-        imageTransform,
-        selectedCaseStyle,
-        selectedDevice
-      );
-    }
+    const timer = setTimeout(() => {
+      if (textureGeneratorRef.current) {
+        textureGeneratorRef.current.render(
+          uploadedImageElement,
+          imageTransform,
+          selectedCaseStyle,
+          selectedDevice
+        );
+      }
+    }, 80);
+    return () => clearTimeout(timer);
   }, [uploadedImageElement, imageTransform, selectedCaseStyle, selectedDevice]);
 
-  // Manejar cambio de marca
   const handleSelectBrand = useCallback((brandId: BrandId) => {
     setSelectedBrand(brandId);
     const brand = BRANDS_DATA.find((b) => b.id === brandId);
@@ -77,12 +74,10 @@ export function useCustomizerState() {
     }
   }, []);
 
-  // Manejar cambio de dispositivo
   const handleSelectDevice = useCallback(
     (device: DeviceConfig) => {
       setSelectedDevice(device);
       if (uploadedImageElement && imageMetadata) {
-        // Recalcular calidad para el nuevo dispositivo
         const updatedMeta = calculatePrintQuality(
           uploadedImageElement,
           { name: imageMetadata.fileName, size: imageMetadata.fileSize } as File,
@@ -95,7 +90,6 @@ export function useCustomizerState() {
     [uploadedImageElement, imageMetadata, imageTransform.scale]
   );
 
-  // Carga de archivo de imagen
   const handleImageUpload = useCallback(
     (file: File) => {
       const reader = new FileReader();
@@ -122,7 +116,6 @@ export function useCustomizerState() {
     [selectedDevice]
   );
 
-  // Remover imagen
   const handleRemoveImage = useCallback(() => {
     setUploadedImage(null);
     setUploadedImageElement(null);
@@ -130,7 +123,6 @@ export function useCustomizerState() {
     setImageTransform(DEFAULT_TRANSFORM);
   }, []);
 
-  // Modificar transformaciones
   const updateTransform = useCallback(
     (updates: Partial<ImageTransform>) => {
       setImageTransform((prev) => {
@@ -154,7 +146,6 @@ export function useCustomizerState() {
     [uploadedImageElement, imageMetadata, selectedDevice]
   );
 
-  // Rotar 90 grados
   const rotate90 = useCallback(() => {
     setImageTransform((prev) => ({
       ...prev,
@@ -162,7 +153,6 @@ export function useCustomizerState() {
     }));
   }, []);
 
-  // Voltear horizontalmente
   const toggleFlipH = useCallback(() => {
     setImageTransform((prev) => ({
       ...prev,
@@ -170,7 +160,6 @@ export function useCustomizerState() {
     }));
   }, []);
 
-  // Voltear verticalmente
   const toggleFlipV = useCallback(() => {
     setImageTransform((prev) => ({
       ...prev,
@@ -178,7 +167,6 @@ export function useCustomizerState() {
     }));
   }, []);
 
-  // Centrar imagen
   const centerPosition = useCallback(() => {
     setImageTransform((prev) => ({
       ...prev,
@@ -187,7 +175,6 @@ export function useCustomizerState() {
     }));
   }, []);
 
-  // Ajustar a cobertura total
   const fitToFullCoverage = useCallback(() => {
     setImageTransform((prev) => ({
       ...prev,
@@ -198,12 +185,10 @@ export function useCustomizerState() {
     }));
   }, []);
 
-  // Resetear ajustes de posición y escala
   const resetTransform = useCallback(() => {
     setImageTransform(DEFAULT_TRANSFORM);
   }, []);
 
-  // Exportar preview para WhatsApp
   const exportPreviewImage = useCallback((): string => {
     if (textureGeneratorRef.current) {
       return textureGeneratorRef.current.exportPreviewDataUrl();

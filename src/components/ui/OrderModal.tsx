@@ -28,7 +28,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  // Armar texto del mensaje para WhatsApp
   const messageText = `Hola, quiero encargar una funda personalizada.
 
 Modelo: ${device.name}
@@ -38,7 +37,6 @@ Acabado de funda: ${caseStyle.name}
 Adjunto el diseño que preparé en el personalizador 3D. ¿Tienen disponibilidad y precio?`;
 
   const encodedMessage = encodeURIComponent(messageText);
-  // Número de WhatsApp del emprendimiento (configurable)
   const defaultWhatsAppNumber = '5491123456789';
   const whatsappUrl = `https://wa.me/${defaultWhatsAppNumber}?text=${encodedMessage}`;
 
@@ -54,7 +52,6 @@ Adjunto el diseño que preparé en el personalizador 3D. ¿Tienen disponibilidad
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div className="bg-surface border border-surface-border w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
         <div className="p-4 border-b border-surface-border flex items-center justify-between bg-surface-muted/50">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
@@ -77,9 +74,7 @@ Adjunto el diseño que preparé en el personalizador 3D. ¿Tienen disponibilidad
           </button>
         </div>
 
-        {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4">
-          {/* Previsualización del diseño */}
           <div className="bg-surface-muted/60 border border-surface-border rounded-xl p-3 flex items-center space-x-4">
             <div className="w-20 h-28 bg-surface rounded-lg border border-surface-border overflow-hidden flex-shrink-0 relative shadow-md">
               {previewImageUrl ? (
@@ -120,7 +115,6 @@ Adjunto el diseño que preparé en el personalizador 3D. ¿Tienen disponibilidad
             </div>
           </div>
 
-          {/* Caja explicativa de cómo funciona */}
           <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3.5 text-xs text-slate-300 space-y-1.5">
             <div className="flex items-center space-x-2 text-emerald-400 font-semibold">
               <CheckCircle2 className="w-4 h-4" />
@@ -132,7 +126,6 @@ Adjunto el diseño que preparé en el personalizador 3D. ¿Tienen disponibilidad
           </div>
         </div>
 
-        {/* Modal Footer / CTAs */}
         <div className="p-4 border-t border-surface-border bg-surface-muted/40 space-y-2">
           <a
             href={whatsappUrl}

@@ -8,19 +8,6 @@ interface CompositeMockupProps {
   transform: ImageTransform;
 }
 
-/**
- * CompositeMockup — Incrusta la imagen del usuario SOLO en las zonas transparentes
- * del mockup PNG real de cada modelo.
- *
- * Los mockups en public/mockups/modelos/ tienen:
- *   - Zonas TRANSPARENTES (alfa=0): Superficie de la funda → ahí va el diseño del usuario
- *   - Zonas OPACAS: Hardware (cámaras, botones), sombras y fondo blanco → se mantienen intactos
- *
- * Técnica Canvas (3 pasos):
- *   1. Dibujar el mockup PNG (los agujeros transparentes quedan vacíos)
- *   2. destination-over: dibujar imagen del usuario DETRÁS → rellena SOLO los agujeros
- *   3. destination-over: rellenar fondo blanco DETRÁS de todo
- */
 export const CompositeMockup: React.FC<CompositeMockupProps> = ({
   device,
   uploadedImage,
@@ -30,9 +17,8 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
   const [mockupImg, setMockupImg] = useState<HTMLImageElement | null>(null);
   const [userImg, setUserImg] = useState<HTMLImageElement | null>(null);
 
-  const mockupSrc = device.mockupImagePath || '/mockups/modelos/Iphone13/iphone13pro.png';
+  const mockupSrc = device.mockupImagePath || '/MockupsV2/Iphone16/Iphone16pro.png';
 
-  // Cargar imagen del mockup
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -41,7 +27,6 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
     img.src = mockupSrc;
   }, [mockupSrc]);
 
-  // Cargar imagen del usuario
   useEffect(() => {
     if (!uploadedImage) {
       setUserImg(null);
@@ -53,7 +38,6 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
     img.src = uploadedImage;
   }, [uploadedImage]);
 
-  // Renderizar la composición en el canvas
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !mockupImg) return;
@@ -61,112 +45,87 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = 600;
-    const H = 600;
+    const W = mockupImg.naturalWidth || 1024;
+    const H = mockupImg.naturalHeight || 1024;
     canvas.width = W;
     canvas.height = H;
 
-    // Limpiar todo
     ctx.clearRect(0, 0, W, H);
 
-    // ============================================================
-    // PASO 1: Dibujar el mockup PNG tal cual
-    // Las zonas transparentes de la funda quedan como "agujeros"
-    // ============================================================
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(mockupImg, 0, 0, W, H);
+    const isIphone17ProMax = device.id === 'iphone-17-pro-max';
+    const isProMaxOrPlus =
+      device.id.includes('pro-max') ||
+      device.id.includes('promax') ||
+      device.id.includes('plus');
+
+    let centerX = W * 0.508;
+    let centerY = H * 0.496;
+    let caseW = isProMaxOrPlus ? W * 0.385 : W * 0.370;
+    let caseH = H * 0.762;
+
+    if (isIphone17ProMax) {
+      centerX = W * 0.465;
+      centerY = H * 0.605;
+      caseW = W * 0.540;
+      caseH = H * 0.535;
+    }
 
     if (userImg) {
-      // ============================================================
-      // PASO 2: Dibujar la imagen del usuario DETRÁS del mockup
-      // destination-over: solo pinta donde el canvas es transparente
-      // → rellena únicamente las zonas de la funda (los agujeros)
-      // ============================================================
-      ctx.globalCompositeOperation = 'destination-over';
-
       ctx.save();
 
-      const centerX = W / 2;
-      const centerY = H / 2;
+      const offsetX = (transform.x / 100) * (caseW / 2);
+      const offsetY = (transform.y / 100) * (caseH / 2);
 
-      ctx.translate(centerX, centerY);
-
-      // Offset del usuario (en porcentaje)
-      const offsetX = (transform.x / 100) * (W / 2);
-      const offsetY = (transform.y / 100) * (H / 2);
-      ctx.translate(offsetX, offsetY);
-
-      // Escala
+      ctx.translate(centerX + offsetX, centerY + offsetY);
       ctx.scale(transform.scale, transform.scale);
-
-      // Rotación
       ctx.rotate((transform.rotation * Math.PI) / 180);
-
-      // Flip
       ctx.scale(transform.flipH ? -1 : 1, transform.flipV ? -1 : 1);
 
-      // Dibujar cubriendo todo el canvas (object-fit: cover)
-      const imgAspect = userImg.width / userImg.height;
-      const canvasAspect = W / H;
+      const imgAspect = userImg.naturalWidth / userImg.naturalHeight;
+      const caseAspect = caseW / caseH;
       let drawW: number, drawH: number;
 
-      if (imgAspect > canvasAspect) {
-        drawH = H;
-        drawW = H * imgAspect;
+      if (imgAspect > caseAspect) {
+        drawH = caseH;
+        drawW = caseH * imgAspect;
       } else {
-        drawW = W;
-        drawH = W / imgAspect;
+        drawW = caseW;
+        drawH = caseW / imgAspect;
       }
 
       ctx.drawImage(userImg, -drawW / 2, -drawH / 2, drawW, drawH);
       ctx.restore();
     }
 
-    // ============================================================
-    // PASO 3: Fondo blanco DETRÁS de todo
-    // Rellena cualquier zona que aún sea transparente
-    // ============================================================
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, W, H);
-
-    // Restaurar operación por defecto
-    ctx.globalCompositeOperation = 'source-over';
-  }, [mockupImg, userImg, transform]);
+    ctx.drawImage(mockupImg, 0, 0, W, H);
+  }, [mockupImg, userImg, transform, device.id]);
 
   useEffect(() => {
     render();
   }, [render]);
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-1 sm:p-2 select-none">
-      {/* Canvas de composición — más grande */}
-      <div className="relative flex items-center justify-center w-full max-w-[540px] sm:max-w-[600px]">
+    <div className="relative w-full h-full flex flex-col items-center justify-center p-2 select-none">
+      <div className="relative flex items-center justify-center w-full max-w-[360px] sm:max-w-[420px] md:max-w-[460px] bg-white rounded-[32px] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/20">
         <canvas
           ref={canvasRef}
-          className="w-full h-auto rounded-2xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.85)]"
-          style={{
-            maxWidth: '600px',
-            imageRendering: 'auto',
-          }}
+          className="w-full h-auto max-h-[70vh] object-contain rounded-2xl"
         />
 
-        {/* Indicador de "sin imagen" */}
         {!uploadedImage && mockupImg && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-black/40 backdrop-blur-md rounded-2xl px-6 py-4 text-center border border-white/10">
-              <p className="text-sm font-semibold text-white/90">Subí tu diseño</p>
-              <p className="text-xs text-white/50 mt-1">para ver la previsualización</p>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+            <div className="bg-black/75 backdrop-blur-md rounded-2xl px-6 py-4 text-center border border-white/15 shadow-2xl">
+              <p className="text-sm font-semibold text-white">Subí tu diseño</p>
+              <p className="text-xs text-slate-300 mt-1">para ver la funda terminada</p>
             </div>
           </div>
         )}
 
-        {/* Loading del mockup */}
         {!mockupImg && (
-          <div className="w-full aspect-square flex items-center justify-center bg-surface-muted/30 rounded-2xl">
+          <div className="w-full aspect-square flex items-center justify-center bg-slate-100 rounded-2xl">
             <div className="flex flex-col items-center space-y-3">
-              <div className="w-8 h-8 border-2 border-brand/50 border-t-brand rounded-full animate-spin" />
-              <p className="text-xs text-slate-400">Cargando maqueta...</p>
+              <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-slate-600 font-medium">Cargando maqueta...</p>
             </div>
           </div>
         )}

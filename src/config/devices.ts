@@ -5,15 +5,13 @@ export const BRANDS_DATA: BrandConfig[] = [
     id: 'apple',
     name: 'Apple',
     devices: [
-      // ==========================================
-      // iPhone 17 Series
-      // ==========================================
+      // iPhone 17
       {
         id: 'iphone-17-pro-max',
         brand: 'apple',
         name: 'iPhone 17 Pro Max',
         generation: 'iPhone 17',
-        mockupImagePath: '/mockups/modelos/Iphone17/iphone17promax.png',
+        mockupImagePath: '/MockupsV2/Iphone17/Iphone17promax.png',
         dimensions: {
           width: 3.07,
           height: 6.43,
@@ -47,7 +45,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 17 Pro',
         generation: 'iPhone 17',
-        mockupImagePath: '/mockups/modelos/Iphone17/iphone17pro.png',
+        mockupImagePath: '/MockupsV2/Iphone17/iphone17pro.png',
         dimensions: {
           width: 2.83,
           height: 5.9,
@@ -81,7 +79,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 17 Air',
         generation: 'iPhone 17',
-        mockupImagePath: '/mockups/modelos/Iphone17/iphone17air.png',
+        mockupImagePath: '/MockupsV2/Iphone17/Iphone17air.png',
         dimensions: {
           width: 2.94,
           height: 6.15,
@@ -115,7 +113,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 17',
         generation: 'iPhone 17',
-        mockupImagePath: '/mockups/modelos/Iphone17/iphone17.png',
+        mockupImagePath: '/MockupsV2/Iphone17/Iphone17.png',
         dimensions: {
           width: 2.81,
           height: 5.89,
@@ -145,15 +143,13 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone 16 Series
-      // ==========================================
+      // iPhone 16
       {
         id: 'iphone-16-pro-max',
         brand: 'apple',
         name: 'iPhone 16 Pro Max',
         generation: 'iPhone 16',
-        mockupImagePath: '/mockups/modelos/Iphone16/iphone16promax.png',
+        mockupImagePath: '/MockupsV2/Iphone16/Iphone16promax.png',
         dimensions: {
           width: 3.02,
           height: 6.42,
@@ -187,7 +183,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 16 Pro',
         generation: 'iPhone 16',
-        mockupImagePath: '/mockups/modelos/Iphone16/iphone16pro.png',
+        mockupImagePath: '/MockupsV2/Iphone16/Iphone16pro.png',
         dimensions: {
           width: 2.85,
           height: 5.89,
@@ -221,7 +217,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 16 Plus',
         generation: 'iPhone 16',
-        mockupImagePath: '/mockups/modelos/Iphone16/iphone16plus.png',
+        mockupImagePath: '/MockupsV2/Iphone16/Iphone16plus.png',
         dimensions: {
           width: 3.06,
           height: 6.34,
@@ -255,7 +251,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 16',
         generation: 'iPhone 16',
-        mockupImagePath: '/mockups/modelos/Iphone16/iphone16.png',
+        mockupImagePath: '/MockupsV2/Iphone16/Iphone16.png',
         dimensions: {
           width: 2.82,
           height: 5.81,
@@ -285,15 +281,13 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone 15 Series
-      // ==========================================
+      // iPhone 15
       {
         id: 'iphone-15-pro-max',
         brand: 'apple',
         name: 'iPhone 15 Pro Max',
         generation: 'iPhone 15',
-        mockupImagePath: '/mockups/modelos/Iphone15/iphone15promax.png',
+        mockupImagePath: '/MockupsV2/Iphone15/Iphone15promax.png',
         dimensions: {
           width: 3.02,
           height: 6.29,
@@ -327,7 +321,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 15 Pro',
         generation: 'iPhone 15',
-        mockupImagePath: '/mockups/modelos/Iphone15/iphone15pro.png',
+        mockupImagePath: '/MockupsV2/Iphone15/Iphone15pro.png',
         dimensions: {
           width: 2.78,
           height: 5.77,
@@ -361,7 +355,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 15 Plus',
         generation: 'iPhone 15',
-        mockupImagePath: '/mockups/modelos/Iphone15/iphone15plus.png',
+        mockupImagePath: '/MockupsV2/Iphone15/Iphone15plus.png',
         dimensions: {
           width: 3.06,
           height: 6.33,
@@ -395,7 +389,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 15',
         generation: 'iPhone 15',
-        mockupImagePath: '/mockups/modelos/Iphone15/iphone15.png',
+        mockupImagePath: '/MockupsV2/Iphone15/Iphone15.png',
         dimensions: {
           width: 2.82,
           height: 5.81,
@@ -425,15 +419,13 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone 14 Series
-      // ==========================================
+      // iPhone 14
       {
         id: 'iphone-14-pro-max',
         brand: 'apple',
         name: 'iPhone 14 Pro Max',
         generation: 'iPhone 14',
-        mockupImagePath: '/mockups/modelos/Iphone14/iphone14promax.png',
+        mockupImagePath: '/MockupsV2/Iphone14/Iphone14promax.png',
         dimensions: {
           width: 3.06,
           height: 6.33,
@@ -467,7 +459,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 14 Pro',
         generation: 'iPhone 14',
-        mockupImagePath: '/mockups/modelos/Iphone14/iphone14pro.png',
+        mockupImagePath: '/MockupsV2/Iphone14/Iphone14pro.png',
         dimensions: {
           width: 2.81,
           height: 5.81,
@@ -501,7 +493,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 14 Plus',
         generation: 'iPhone 14',
-        mockupImagePath: '/mockups/modelos/Iphone14/iphone14plus.png',
+        mockupImagePath: '/MockupsV2/Iphone14/Iphone14plus.png',
         dimensions: {
           width: 3.07,
           height: 6.33,
@@ -535,7 +527,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 14',
         generation: 'iPhone 14',
-        mockupImagePath: '/mockups/modelos/Iphone14/iphone14.png',
+        mockupImagePath: '/MockupsV2/Iphone14/Iphone14.png',
         dimensions: {
           width: 2.81,
           height: 5.78,
@@ -565,15 +557,13 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone 13 Series
-      // ==========================================
+      // iPhone 13
       {
         id: 'iphone-13-pro-max',
         brand: 'apple',
         name: 'iPhone 13 Pro Max',
         generation: 'iPhone 13',
-        mockupImagePath: '/mockups/modelos/Iphone13/iphone13promax.png',
+        mockupImagePath: '/MockupsV2/Iphone13/Iphone13promax.png',
         dimensions: {
           width: 3.07,
           height: 6.33,
@@ -607,7 +597,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 13 Pro',
         generation: 'iPhone 13',
-        mockupImagePath: '/mockups/modelos/Iphone13/iphone13pro.png',
+        mockupImagePath: '/MockupsV2/Iphone13/Iphone13pro.png',
         dimensions: {
           width: 2.81,
           height: 5.78,
@@ -641,7 +631,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 13',
         generation: 'iPhone 13',
-        mockupImagePath: '/mockups/modelos/Iphone13/iphone13.png',
+        mockupImagePath: '/MockupsV2/Iphone13/Iphone13.png',
         dimensions: {
           width: 2.81,
           height: 5.78,
@@ -675,7 +665,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 13 mini',
         generation: 'iPhone 13',
-        mockupImagePath: '/mockups/modelos/Iphone13/iphone13mini.png',
+        mockupImagePath: '/MockupsV2/Iphone13/Iphone13mini.png',
         dimensions: {
           width: 2.53,
           height: 5.18,
@@ -705,15 +695,13 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone 12 Series
-      // ==========================================
+      // iPhone 12
       {
         id: 'iphone-12-pro-max',
         brand: 'apple',
         name: 'iPhone 12 Pro Max',
         generation: 'iPhone 12',
-        mockupImagePath: '/mockups/modelos/Iphone12/iphone12promax.png',
+        mockupImagePath: '/MockupsV2/Iphone12/Iphone12promax.png',
         dimensions: {
           width: 3.07,
           height: 6.33,
@@ -747,7 +735,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 12 Pro',
         generation: 'iPhone 12',
-        mockupImagePath: '/mockups/modelos/Iphone12/iphone12pro.png',
+        mockupImagePath: '/MockupsV2/Iphone12/Iphone12pro.png',
         dimensions: {
           width: 2.81,
           height: 5.78,
@@ -781,7 +769,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 12',
         generation: 'iPhone 12',
-        mockupImagePath: '/mockups/modelos/Iphone12/iphone12.png',
+        mockupImagePath: '/MockupsV2/Iphone12/Iphone12.png',
         dimensions: {
           width: 2.81,
           height: 5.78,
@@ -815,7 +803,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 12 mini',
         generation: 'iPhone 12',
-        mockupImagePath: '/mockups/modelos/Iphone12/iphone12mini.png',
+        mockupImagePath: '/MockupsV2/Iphone12/Iphone12mini.png',
         dimensions: {
           width: 2.53,
           height: 5.18,
@@ -845,15 +833,13 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone 11 Series
-      // ==========================================
+      // iPhone 11
       {
         id: 'iphone-11-pro-max',
         brand: 'apple',
         name: 'iPhone 11 Pro Max',
         generation: 'iPhone 11',
-        mockupImagePath: '/mockups/modelos/Iphone11/iphone11promax.png',
+        mockupImagePath: '/MockupsV2/Iphone11/Iphone11promax.png',
         dimensions: {
           width: 3.06,
           height: 6.22,
@@ -887,7 +873,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 11 Pro',
         generation: 'iPhone 11',
-        mockupImagePath: '/mockups/modelos/Iphone11/iphone11pro.png',
+        mockupImagePath: '/MockupsV2/Iphone11/Iphone11pro.png',
         dimensions: {
           width: 2.81,
           height: 5.67,
@@ -921,7 +907,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         brand: 'apple',
         name: 'iPhone 11',
         generation: 'iPhone 11',
-        mockupImagePath: '/mockups/modelos/Iphone11/iphone11.png',
+        mockupImagePath: '/MockupsV2/Iphone11/Iphone11.png',
         dimensions: {
           width: 2.98,
           height: 5.94,
@@ -951,9 +937,7 @@ export const BRANDS_DATA: BrandConfig[] = [
         defaultCaseColor: '#121212',
       },
 
-      // ==========================================
-      // iPhone X / XS / XR / SE Series
-      // ==========================================
+      // iPhone X / XS / XR / SE
       {
         id: 'iphone-xs-max',
         brand: 'apple',

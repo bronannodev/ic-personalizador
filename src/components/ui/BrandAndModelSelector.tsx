@@ -22,11 +22,8 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
     : null;
 
   const devices = currentBrand?.devices || [];
-
-  // Samsung está en construcción
   const isSamsungSelected = selectedBrand === 'samsung';
 
-  // Agrupar modelos por generación (serie)
   const groupedGenerations = useMemo(() => {
     const map = new Map<string, DeviceConfig[]>();
     devices.forEach((d) => {
@@ -42,12 +39,10 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
     }));
   }, [devices]);
 
-  // Estado del sub-paso: null = viendo lista de series, string = serie seleccionada para ver versiones
   const [activeGenView, setActiveGenView] = useState<string | null>(() => {
     return selectedDevice?.generation || (groupedGenerations[0]?.name ?? null);
   });
 
-  // Si cambia la marca, resetear o actualizar serie
   useEffect(() => {
     if (selectedDevice?.generation) {
       setActiveGenView(selectedDevice.generation);
@@ -58,12 +53,11 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
 
   return (
     <div className="w-full space-y-4">
-      {/* 1. Selección de Marca */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
           1. Marca
         </label>
-        <div className="grid grid-cols-2 gap-2 bg-white/[0.04] p-1.5 rounded-2xl border border-white/10 backdrop-blur-xl">
+        <div className="grid grid-cols-2 gap-2 bg-white/[0.04] p-1.5 rounded-xl border border-white/10 backdrop-blur-xl">
           {BRANDS_DATA.map((brand) => {
             const isSelected = selectedBrand === brand.id;
             return (
@@ -81,7 +75,7 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
                     setActiveGenView(null);
                   }
                 }}
-                className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
                   isSelected
                     ? 'bg-white text-slate-950 shadow-md font-semibold'
                     : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
@@ -95,11 +89,9 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
         </div>
       </div>
 
-      {/* 2. Selección de Modelo (Jerárquica: Serie -> Versión) */}
       <AnimatePresence mode="wait">
         {selectedBrand ? (
           isSamsungSelected ? (
-            /* ===== SAMSUNG: EN CONSTRUCCIÓN ===== */
             <motion.div
               key="samsung-wip"
               initial={{ opacity: 0, y: 10 }}
@@ -124,7 +116,6 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
               </div>
             </motion.div>
           ) : (
-            /* ===== APPLE: SELECTOR JERÁRQUICO ===== */
             <motion.div
               key="apple-selector"
               initial={{ opacity: 0, y: 8 }}
@@ -135,9 +126,6 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
             >
               <AnimatePresence mode="wait">
                 {activeGenView === null ? (
-                  /* ========================================================================= */
-                  /* NIVEL 1: LISTADO VERTICAL DE SERIES GENERALES                             */
-                  /* ========================================================================= */
                   <motion.div
                     key="generation-list"
                     initial={{ opacity: 0, x: -10 }}
@@ -164,7 +152,6 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
                             type="button"
                             onClick={() => {
                               setActiveGenView(group.name);
-                              // Si ningún modelo de este grupo está seleccionado, seleccionar el primero
                               if (!hasSelected && group.devices.length > 0) {
                                 onSelectDevice(group.devices[0]);
                               }
@@ -213,9 +200,6 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
                     </div>
                   </motion.div>
                 ) : (
-                  /* ========================================================================= */
-                  /* NIVEL 2: LISTADO VERTICAL DE VERSIONES DE LA SERIE SELECCIONADA           */
-                  /* ========================================================================= */
                   <motion.div
                     key={`version-list-${activeGenView}`}
                     initial={{ opacity: 0, x: 10 }}
@@ -224,7 +208,6 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
                     transition={{ duration: 0.2 }}
                     className="space-y-2.5"
                   >
-                    {/* Botón para volver al listado de series */}
                     <div className="flex items-center justify-between">
                       <button
                         type="button"
@@ -244,7 +227,6 @@ export const BrandAndModelSelector: React.FC<BrandAndModelSelectorProps> = ({
                       3. Elegí la versión exacta
                     </label>
 
-                    {/* Lista vertical de versiones */}
                     <div className="space-y-1.5 max-h-[290px] overflow-y-auto pr-1">
                       {groupedGenerations
                         .find((g) => g.name === activeGenView)

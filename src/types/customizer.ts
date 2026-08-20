@@ -13,7 +13,7 @@ export type CameraType =
 
 export interface CameraModuleConfig {
   type: CameraType;
-  position: [number, number, number]; // [x, y, z] relative to phone back
+  position: [number, number, number];
   width: number;
   height: number;
   depth: number;
@@ -21,11 +21,11 @@ export interface CameraModuleConfig {
   lensCount: number;
   hasFlash: boolean;
   hasLidar?: boolean;
-  moduleX?: number; // mm from left edge
-  moduleY?: number; // mm from top edge
-  moduleWidth?: number; // mm
-  moduleHeight?: number; // mm
-  moduleRadius?: number; // mm
+  moduleX?: number;
+  moduleY?: number;
+  moduleWidth?: number;
+  moduleHeight?: number;
+  moduleRadius?: number;
 }
 
 export interface DeviceDimensions {
@@ -45,6 +45,7 @@ export interface DeviceConfig {
   badge?: string;
   modelPath?: string;
   mockupImagePath?: string;
+  silhouetteImagePath?: string;
   dimensions: DeviceDimensions;
   camera: CameraModuleConfig;
   customizableMeshName: string;
@@ -73,10 +74,10 @@ export interface ImageMetadata {
 }
 
 export interface ImageTransform {
-  x: number; // -100 to 100 (% offset)
-  y: number; // -100 to 100 (% offset)
-  scale: number; // 0.2 to 3.0
-  rotation: number; // 0 to 360 deg
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
   flipH?: boolean;
   flipV?: boolean;
   fitMode: 'cover' | 'contain' | 'custom';
@@ -89,7 +90,7 @@ export interface CaseStyle {
   opacity: number;
   roughness: number;
   metalness: number;
-  transmission: number; // For clear/transparent cases
+  transmission: number;
   clearcoat: number;
 }
 
@@ -105,4 +106,3 @@ export interface CustomizerState {
   activeTab: 'device' | 'design' | 'style';
   isOrderModalOpen: boolean;
 }
-

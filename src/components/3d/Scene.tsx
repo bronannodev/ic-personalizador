@@ -42,7 +42,7 @@ export const Scene: React.FC<SceneProps> = ({
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 1.15,
-          preserveDrawingBuffer: true, // Permite capturar snapshot para WhatsApp
+          preserveDrawingBuffer: true,
         }}
         dpr={[1, Math.min(2, typeof window !== 'undefined' ? window.devicePixelRatio : 2)]}
         className="w-full h-full"
@@ -50,14 +50,12 @@ export const Scene: React.FC<SceneProps> = ({
         <Suspense fallback={null}>
           <StudioEnvironment />
 
-          {/* Modelo 3D del teléfono y funda con textura interactiva */}
           <PhoneGeometry
             device={device}
             caseStyle={caseStyle}
             customTexture={customTexture}
           />
 
-          {/* Control Orbital táctil y con mouse */}
           <OrbitControls
             ref={handleControlsRef}
             enablePan={false}
