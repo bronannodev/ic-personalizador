@@ -458,16 +458,18 @@ function renderPhotographic(
     design.height = H;
     const dctx = design.getContext('2d');
     if (dctx) {
+      // "cover": la imagen llena TODA la ventana (igual que objectFit:cover en
+      // el editor). El lado que sobra se recorta con la máscara.
       const imgAspect = image.naturalWidth / image.naturalHeight;
       const winAspect = winRect.w / winRect.h;
       let baseW: number;
       let baseH: number;
       if (imgAspect > winAspect) {
-        baseW = winRect.w;
-        baseH = winRect.w / imgAspect;
-      } else {
         baseH = winRect.h;
         baseW = winRect.h * imgAspect;
+      } else {
+        baseW = winRect.w;
+        baseH = winRect.w / imgAspect;
       }
 
       // Desplazamiento porcentual RELATIVO A LA VENTANA (igual que el editor).

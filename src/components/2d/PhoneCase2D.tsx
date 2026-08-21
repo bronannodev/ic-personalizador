@@ -352,14 +352,14 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                 src={uploadedImage}
                 alt="Vista completa exterior"
                 className="max-w-none max-h-none origin-center opacity-30 brightness-[0.4] saturate-50 will-change-transform pointer-events-none"
-                style={{
-                  transform: imgTransformStr,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                }}
-                draggable={false}
-              />
+                  style={{
+                    transform: imgTransformStr,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                  draggable={false}
+                />
             </div>
           )}
 

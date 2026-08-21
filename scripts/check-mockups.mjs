@@ -11,11 +11,21 @@
  *   node scripts/check-mockups.mjs                 # analiza toda la carpeta
  *   node scripts/check-mockups.mjs ruta/al.png     # analiza un archivo puntual
  *
+ * Cómo detecta la ventana (flood-fill):
+ *   1. Marca todos los píxeles casi transparentes (alfa < ~40).
+ *   2. Hace flood-fill desde los 4 bordes a través de esos píxeles: eso marca
+ *      el FONDO EXTERIOR (transparencia conectada al borde de la imagen).
+ *   3. La VENTANA DEL DISEÑO = transparente pero NO exterior, es decir, el hueco
+ *      encerrado por el marco opaco de la funda.
+ *   Esto funciona con AMBAS estructuras de PNG:
+ *     a) Fondo opaco con un agujero recortado en el panel.
+ *     b) Fondo transparente + marco/funda "flotando" con su panel recortado.
+ *
  * Requisitos de un PNG válido (para que use modo foto):
  *   - Formato PNG-24 con transparencia real (RGBA de 8 bits, NO indexado/paleta).
- *   - Un hueco transparente (alfa < ~40) en la zona del diseño.
- *   - Ese hueco debe ocupar entre ~6% y ~85% de la imagen y NO abarcar casi todo.
- *   - El resto (marco, cámara, bordes) debe permanecer OPACO.
+ *   - El panel del diseño recortado a transparente (alfa < ~40), ENCERRADO por
+ *     el marco/cámara opacos (así el flood-fill no lo confunde con el fondo).
+ *   - Esa ventana interior debe ocupar entre ~3% y ~92% de la imagen.
  */
 import fs from 'node:fs';
 import path from 'node:path';
