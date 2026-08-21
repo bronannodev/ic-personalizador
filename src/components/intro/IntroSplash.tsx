@@ -40,7 +40,7 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
         animate={{ opacity: phase === 'exiting' ? 0 : 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#07080c] select-none cursor-pointer overflow-hidden"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#f1f3f6] select-none cursor-pointer overflow-hidden"
         onClick={() => {
           setPhase('done');
           onComplete();
@@ -50,10 +50,10 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{
             scale: phase === 'entering' ? [0.8, 1.2, 1.1] : 1.4,
-            opacity: phase === 'entering' ? [0, 0.4, 0.25] : 0,
+            opacity: phase === 'entering' ? [0, 0.55, 0.4] : 0,
           }}
           transition={{ duration: 2.2, ease: 'easeOut' }}
-          className="absolute w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-indigo-600/30 via-purple-500/20 to-transparent blur-3xl pointer-events-none"
+          className="absolute w-[520px] h-[520px] rounded-full bg-gradient-to-tr from-purple-500/25 via-indigo-500/20 to-slate-400/15 blur-3xl pointer-events-none"
         />
 
         <motion.div
@@ -75,12 +75,12 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
             duration: phase === 'entering' ? 1.6 : 0.65,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="relative flex flex-col items-center justify-center p-8"
+          className="relative flex flex-col items-center justify-center p-8 z-10"
         >
           <img
             src={logoSrc}
             alt="Logo"
-            className="w-auto h-16 sm:h-20 md:h-24 object-contain brightness-0 invert drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]"
+            className="w-auto h-16 sm:h-20 md:h-24 object-contain drop-shadow-[0_8px_20px_rgba(124,58,237,0.15)]"
             onError={(e) => {
               (e.target as HTMLElement).style.display = 'none';
             }}
@@ -88,16 +88,16 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
 
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: '120px', opacity: 0.7 }}
+            animate={{ width: '130px', opacity: 0.8 }}
             transition={{ delay: 0.6, duration: 1.0, ease: 'easeOut' }}
-            className="h-[1px] bg-gradient-to-r from-transparent via-indigo-400 to-transparent mt-6"
+            className="h-[1.5px] bg-gradient-to-r from-transparent via-purple-600 to-transparent mt-6"
           />
 
           <motion.span
             initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 0.8, y: 0 }}
+            animate={{ opacity: 0.9, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
-            className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-slate-300 font-light mt-3"
+            className="text-[11px] sm:text-xs tracking-[0.25em] uppercase text-purple-900/80 font-medium mt-3"
           >
             Hecho en La Rioja
           </motion.span>
@@ -105,10 +105,10 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({
 
         <motion.button
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          whileHover={{ opacity: 0.9 }}
+          animate={{ opacity: 0.6 }}
+          whileHover={{ opacity: 1 }}
           transition={{ delay: 0.9, duration: 0.5 }}
-          className="absolute bottom-8 text-[11px] uppercase tracking-widest text-slate-500 hover:text-white px-3 py-1 rounded-full transition-all"
+          className="absolute bottom-8 text-[11px] uppercase tracking-widest text-slate-500 hover:text-purple-700 px-3 py-1 rounded-full transition-all"
         >
           Toca para comenzar
         </motion.button>

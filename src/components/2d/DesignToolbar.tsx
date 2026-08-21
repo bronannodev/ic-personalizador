@@ -44,7 +44,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
   return (
     <div className="w-full flex flex-col items-center space-y-2 pointer-events-auto">
       {/* Barra de herramientas flotante de vidrio */}
-      <div className="w-full max-w-md flex items-center justify-between bg-[#0b0d14]/90 backdrop-blur-2xl border border-white/15 p-1 rounded-xl shadow-xl gap-1">
+      <div className="w-full max-w-md flex items-center justify-between bg-white/90 backdrop-blur-2xl border border-slate-200/90 p-1 rounded-xl shadow-xl gap-1">
         <div className="flex items-center space-x-1 overflow-x-auto py-0.5 scrollbar-none w-full justify-around sm:justify-start">
           {/* Ajustar / Transformar */}
           <button
@@ -53,7 +53,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
             className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1.5 flex-shrink-0 ${
               isTransformPanelOpen
                 ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-300 hover:text-white hover:bg-white/10 active:scale-95'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95'
             }`}
             title="Ajustar zoom y rotación"
           >
@@ -65,7 +65,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
           <button
             type="button"
             onClick={onCenter}
-            className="px-2 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+            className="px-2 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
             title="Centrar"
           >
             <AlignCenter className="w-3.5 h-3.5" />
@@ -76,7 +76,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
           <button
             type="button"
             onClick={onFitFull}
-            className="px-2 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+            className="px-2 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
             title="Ajustar a la funda completa"
           >
             <Maximize2 className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
           <button
             type="button"
             onClick={onRotate90}
-            className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+            className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
             title="Girar 90°"
           >
             <RotateCw className="w-3.5 h-3.5" />
@@ -99,8 +99,8 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
             onClick={onFlipH}
             className={`p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 flex-shrink-0 ${
               transform.flipH
-                ? 'bg-white/20 text-white font-semibold'
-                : 'text-slate-300 hover:text-white hover:bg-white/10 active:scale-95'
+                ? 'bg-slate-200 text-slate-900 font-semibold'
+                : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95'
             }`}
             title="Efecto espejo"
           >
@@ -112,10 +112,10 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
             <button
               type="button"
               onClick={onChangePhotoClick}
-              className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
+              className="p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all flex items-center space-x-1 flex-shrink-0"
               title="Cambiar foto"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-indigo-400" />
+              <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
             </button>
           )}
 
@@ -123,7 +123,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
           <button
             type="button"
             onClick={onRemove}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 active:scale-95 transition-all flex-shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 transition-all flex-shrink-0"
             title="Eliminar foto"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -133,9 +133,9 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({
 
       {/* Pill informativa discreta sobre la calidad */}
       {imageMetadata && (
-        <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-black/50 backdrop-blur-md px-3 py-0.5 rounded-md border border-white/10">
-          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-          <span>Calidad: <strong className="text-slate-200">{imageMetadata.quality}</strong> ({imageMetadata.dpi} DPI)</span>
+        <div className="flex items-center gap-2 text-[10px] text-slate-600 bg-white/80 backdrop-blur-md px-3 py-0.5 rounded-md border border-slate-200/80 shadow-xs">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          <span>Calidad: <strong className="text-slate-800">{imageMetadata.quality}</strong> ({imageMetadata.dpi} DPI)</span>
         </div>
       )}
     </div>

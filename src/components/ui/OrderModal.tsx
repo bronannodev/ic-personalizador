@@ -37,7 +37,7 @@ Acabado de funda: ${caseStyle.name}
 Adjunto el diseño que preparé en el personalizador 3D. ¿Tienen disponibilidad y precio?`;
 
   const encodedMessage = encodeURIComponent(messageText);
-  const defaultWhatsAppNumber = '5491123456789';
+  const defaultWhatsAppNumber = '5493804359576';
   const whatsappUrl = `https://wa.me/${defaultWhatsAppNumber}?text=${encodedMessage}`;
 
   const handleDownload = () => {

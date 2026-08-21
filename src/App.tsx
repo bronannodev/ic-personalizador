@@ -97,7 +97,7 @@ export function App() {
       message += `\n\nDiseño: ${cloudinaryMockupUrl}`;
     }
 
-    const defaultWhatsAppNumber = '5491123456789';
+    const defaultWhatsAppNumber = '5493804359576';
     const whatsappUrl = `https://wa.me/${defaultWhatsAppNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -113,7 +113,7 @@ export function App() {
   };
 
   return (
-    <div className="relative flex flex-col h-screen w-full bg-[#07080c] text-slate-100 font-sans selection:bg-white/20 overflow-hidden select-none">
+    <div className="relative flex flex-col h-screen w-full bg-[#f1f3f6] text-slate-800 font-sans selection:bg-indigo-500/20 overflow-hidden select-none">
       <input
         ref={fileInputRef}
         type="file"
@@ -130,29 +130,29 @@ export function App() {
         />
       )}
 
-      {/* Fondo animado fluido */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-25">
+      {/* Fondo animado fluido con burbujas visibles en tonos morados y grises */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60">
         <MoltenMetal
-          color1="#181135"
-          color2="#6366f1"
-          color3="#c084fc"
+          color1="#4c1d95"
+          color2="#7c3aed"
+          color3="#94a3b8"
           speed={0.25}
-          scale={3.5}
+          scale={3.2}
           detail={3}
           glow={1.4}
-          coreSize={0.08}
+          coreSize={0.09}
           swirl={0.8}
           fold={-0.2}
-          blackPoint={0.08}
-          brightness={1.1}
+          blackPoint={0.05}
+          brightness={1.2}
           colorMode="molten"
           grain={true}
-          grainIntensity={0.04}
+          grainIntensity={0.03}
           mouseInteraction={true}
           mouseStrength={0.2}
           opacity={0.9}
         />
-        <div className="absolute inset-0 bg-radial from-transparent via-[#07080c]/60 to-[#07080c]/90" />
+        <div className="absolute inset-0 bg-radial from-transparent via-[#f1f3f6]/15 to-[#f1f3f6]/50" />
       </div>
 
       <AnimatePresence mode="wait">
@@ -168,21 +168,21 @@ export function App() {
             transition={{ duration: 0.25 }}
             className="relative z-10 flex-1 flex flex-col items-center justify-center p-4 overflow-y-auto max-w-lg mx-auto w-full min-h-screen"
           >
-            <div className="w-full bg-[#10121a]/90 backdrop-blur-2xl border border-white/15 rounded-xl shadow-2xl p-5 sm:p-6 flex flex-col items-center space-y-4">
+            <div className="w-full bg-white/90 backdrop-blur-2xl border border-slate-200/90 rounded-2xl shadow-xl p-5 sm:p-6 flex flex-col items-center space-y-4">
               <img
                 src="/logo.webp"
                 alt="Logo"
-                className="h-9 sm:h-11 w-auto object-contain brightness-0 invert opacity-95 hover:opacity-100 transition-opacity"
+                className="h-9 sm:h-11 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
 
               <div className="text-center space-y-1">
-                <h1 className="text-xl font-semibold tracking-tight text-white">
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900">
                   Personalizá tu funda
                 </h1>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Elegí el modelo de tu celular para comenzar a diseñar
                 </p>
               </div>
@@ -200,7 +200,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => setActiveStep(2)}
-                  className="w-full py-3 px-5 rounded-lg bg-white text-slate-950 hover:bg-slate-100 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                  className="w-full py-3 px-5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
                 >
                   <span>Continuar al diseño</span>
                   <ArrowRight className="w-4 h-4" />
@@ -227,16 +227,16 @@ export function App() {
               <button
                 type="button"
                 onClick={handleResetToStep1}
-                className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-slate-200 border border-white/15 backdrop-blur-xl transition-all text-xs font-medium shadow-md active:scale-95"
+                className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 backdrop-blur-xl transition-all text-xs font-medium shadow-sm active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span className="hidden xs:inline">Cambiar</span>
-                <span className="font-semibold text-white">{state.selectedDevice.name}</span>
+                <span className="font-semibold text-slate-900">{state.selectedDevice.name}</span>
               </button>
 
-              <div className="pointer-events-auto flex items-center space-x-2 bg-black/70 px-3 py-1.5 rounded-lg border border-white/15 backdrop-blur-xl shadow-md text-xs">
-                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                <span className="text-slate-300 font-medium">Editor 2D</span>
+              <div className="pointer-events-auto flex items-center space-x-2 bg-white/80 px-3 py-1.5 rounded-lg border border-slate-200/80 backdrop-blur-xl shadow-sm text-xs">
+                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                <span className="text-slate-700 font-medium">Editor 2D</span>
               </div>
             </header>
 
@@ -298,7 +298,7 @@ export function App() {
                   <button
                     type="button"
                     onClick={handleGoToStep3}
-                    className="w-full py-3 px-6 rounded-lg bg-white text-slate-950 hover:bg-slate-100 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                    className="w-full py-3 px-6 rounded-lg bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
                   >
                     <span>Ver funda terminada</span>
                     <ArrowRight className="w-4 h-4" />
@@ -309,7 +309,7 @@ export function App() {
                   <button
                     type="button"
                     onClick={triggerUpload}
-                    className="flex-1 py-3 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
+                    className="flex-1 py-3 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
                   >
                     <Upload className="w-4 h-4" />
                     <span>Subir foto o diseño</span>
@@ -318,7 +318,7 @@ export function App() {
                   <button
                     type="button"
                     onClick={handleGoToStep3}
-                    className="py-3 px-4 rounded-lg bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-medium transition-all"
+                    className="py-3 px-4 rounded-lg bg-slate-200/80 hover:bg-slate-300 text-slate-700 text-xs font-medium transition-all"
                   >
                     Omitir
                   </button>
@@ -345,13 +345,13 @@ export function App() {
               <button
                 type="button"
                 onClick={() => setActiveStep(2)}
-                className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-slate-200 border border-white/15 backdrop-blur-xl transition-all text-xs font-medium shadow-md active:scale-95"
+                className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700 border border-slate-200/80 backdrop-blur-xl transition-all text-xs font-medium shadow-sm active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Ajustar diseño</span>
               </button>
 
-              <div className="pointer-events-auto flex items-center space-x-1.5 bg-black/70 px-3 py-1.5 rounded-lg border border-white/15 backdrop-blur-xl shadow-md text-xs text-emerald-400 font-medium">
+              <div className="pointer-events-auto flex items-center space-x-1.5 bg-white/80 px-3 py-1.5 rounded-lg border border-slate-200/80 backdrop-blur-xl shadow-sm text-xs text-emerald-600 font-medium">
                 <Eye className="w-3.5 h-3.5" />
                 <span>{state.selectedDevice.name}</span>
               </div>
@@ -361,22 +361,22 @@ export function App() {
             <main className="relative flex-1 w-full flex items-center justify-center overflow-hidden p-2">
               <div className="w-full max-w-lg h-full flex items-center justify-center">
                 {isCloudinaryProcessing ? (
-                  <div className="w-full max-w-[360px] sm:max-w-[420px] bg-[#10121a]/95 border border-white/15 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center space-y-4 shadow-2xl backdrop-blur-2xl">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                  <div className="w-full max-w-[360px] sm:max-w-[420px] bg-white/95 border border-slate-200/90 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center space-y-4 shadow-2xl backdrop-blur-2xl">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
                       <Sparkles className="w-6 h-6 animate-pulse" />
                     </div>
 
                     <div className="text-center space-y-1">
-                      <p className="text-sm font-semibold text-white">
+                      <p className="text-sm font-semibold text-slate-900">
                         Procesando maqueta final...
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-500">
                         Generando render fotorrealista en alta resolución
                       </p>
                     </div>
 
                     {/* Barra de progreso animada */}
-                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
                       <motion.div
                         className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-full"
                         initial={{ x: '-100%' }}
@@ -397,13 +397,13 @@ export function App() {
             </main>
 
             {/* Acciones directas */}
-            <footer className="w-full z-30 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 flex flex-col items-center gap-2 bg-gradient-to-t from-[#07080c] via-[#07080c]/80 to-transparent">
+            <footer className="w-full z-30 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 flex flex-col items-center gap-2 bg-gradient-to-t from-[#f1f3f6] via-[#f1f3f6]/80 to-transparent">
               <div className="w-full max-w-md space-y-2">
                 <button
                   type="button"
                   onClick={handleWhatsAppOrder}
                   disabled={isCloudinaryProcessing}
-                  className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/50 transition-all"
+                  className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-700/20 transition-all"
                 >
                   <MessageCircle className="w-4.5 h-4.5 fill-current" />
                   <span>Pedir esta funda por WhatsApp</span>
@@ -414,7 +414,7 @@ export function App() {
                     type="button"
                     onClick={handleDownloadPreview}
                     disabled={isCloudinaryProcessing}
-                    className="flex-1 py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 disabled:opacity-50 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                    className="flex-1 py-2 px-3 rounded-lg bg-white/80 hover:bg-white disabled:opacity-50 border border-slate-200/90 text-slate-700 hover:text-slate-900 text-xs font-medium flex items-center justify-center gap-1.5 transition-all shadow-sm"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Guardar diseño</span>
@@ -423,7 +423,7 @@ export function App() {
                   <button
                     type="button"
                     onClick={() => setActiveStep(2)}
-                    className="flex-1 py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium transition-all text-center"
+                    className="flex-1 py-2 px-3 rounded-lg bg-white/80 hover:bg-white border border-slate-200/90 text-slate-700 hover:text-slate-900 text-xs font-medium transition-all text-center shadow-sm"
                   >
                     Ajustar foto
                   </button>
@@ -431,7 +431,7 @@ export function App() {
                   <button
                     type="button"
                     onClick={handleResetToStep1}
-                    className="py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-all"
+                    className="py-2 px-3 rounded-lg bg-white/80 hover:bg-white border border-slate-200/90 text-slate-700 hover:text-slate-900 text-xs font-medium flex items-center gap-1 transition-all shadow-sm"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span className="hidden xs:inline">Cambiar</span>
