@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { DeviceConfig, CaseStyle, ImageTransform } from '../../types/customizer';
 import { ImagePlus, Sparkles } from 'lucide-react';
+import { preloadMockup, getCachedMockup, MockupData } from '../../utils/caseRenderer';
 
 interface PhoneCase2DProps {
   device: DeviceConfig;
@@ -39,6 +40,41 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
   const initialPinchScaleRef = useRef<number>(1.0);
 
   const [isInteracting, setIsInteracting] = useState(false);
+
+  // Mockup fotográfico del dispositivo (para posicionar el diseño dentro de la
+  // ventana real de la funda, igual que el render final).
+  const [mockup, setMockup] = useState<MockupData | null>(
+    () => getCachedMockup(device.mockupImagePath)
+  );
+
+  useEffect(() => {
+    let active = true;
+    setMockup(getCachedMockup(device.mockupImagePath));
+    if (device.mockupImagePath) {
+      preloadMockup(device.mockupImagePath).then((data) => {
+        if (active) setMockup(data);
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [device.mockupImagePath]);
+
+  const usePhoto = !!mockup && mockup.hasWindow && !!mockup.window;
+
+  // Fracción del contenedor que ocupa la ventana del diseño (para convertir el
+  // arrastre en píxeles a porcentaje relativo a la ventana).
+  const windowFracRef = useRef<{ w: number; h: number }>({ w: 1, h: 1 });
+  useEffect(() => {
+    if (usePhoto && mockup?.window) {
+      windowFracRef.current = {
+        w: mockup.window.w / mockup.naturalWidth,
+        h: mockup.window.h / mockup.naturalHeight,
+      };
+    } else {
+      windowFracRef.current = { w: 1, h: 1 };
+    }
+  }, [usePhoto, mockup]);
 
   useEffect(() => {
     curPosRef.current = { x: transform.x, y: transform.y };
@@ -91,11 +127,15 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
       const deltaX = e.clientX - dragStartRef.current.x;
       const deltaY = e.clientY - dragStartRef.current.y;
 
-      const percentX = (deltaX / (rect.width / 2)) * 50;
-      const percentY = (deltaY / (rect.height / 2)) * 50;
+      // El desplazamiento es porcentual respecto a la VENTANA del diseño, que
+      // ocupa una fracción del contenedor (en modo foto). En modo vectorial la
+      // fracción es 1 (todo el contenedor).
+      const frac = windowFracRef.current;
+      const percentX = (deltaX / (rect.width * frac.w)) * 100;
+      const percentY = (deltaY / (rect.height * frac.h)) * 100;
 
-      const newX = Math.max(-100, Math.min(100, dragStartRef.current.initX + percentX));
-      const newY = Math.max(-100, Math.min(100, dragStartRef.current.initY + percentY));
+      const newX = Math.max(-150, Math.min(150, dragStartRef.current.initX + percentX));
+      const newY = Math.max(-150, Math.min(150, dragStartRef.current.initY + percentY));
 
       curPosRef.current = { x: newX, y: newY };
 
@@ -176,6 +216,110 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
     initialPinchDistRef.current = null;
   }, []);
 
+  const imgTransformStr = `translate3d(${transform.x}%, ${transform.y}%, 0) scale(${
+    transform.scale
+  }) rotate(${transform.rotation}deg) scaleX(${transform.flipH ? -1 : 1}) scaleY(${
+    transform.flipV ? -1 : 1
+  })`;
+
+  /* ======================================================================= */
+  /* MODO FOTOGRÁFICO: usa el PNG real de la funda con el diseño incrustado.  */
+  /* ======================================================================= */
+  if (usePhoto && mockup && mockup.window) {
+    const mockAspect = mockup.naturalWidth / mockup.naturalHeight;
+    const win = mockup.window;
+    const winLeft = (win.x / mockup.naturalWidth) * 100;
+    const winTop = (win.y / mockup.naturalHeight) * 100;
+    const winW = (win.w / mockup.naturalWidth) * 100;
+    const winH = (win.h / mockup.naturalHeight) * 100;
+
+    return (
+      <div
+        className="relative flex flex-col items-center justify-center w-full h-full select-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="relative flex items-center justify-center h-[76vh] sm:h-[78vh] md:h-[82vh] max-h-[680px] w-full py-1">
+          <div
+            ref={containerRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onWheel={handleWheel}
+            className={`relative h-full touch-none ${
+              uploadedImage ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+            }`}
+            style={{ aspectRatio: `${mockAspect}`, maxHeight: '100%' }}
+          >
+            {/* Ventana del diseño: la imagen del cliente recortada al hueco real */}
+            <div
+              className="absolute overflow-hidden"
+              style={{
+                left: `${winLeft}%`,
+                top: `${winTop}%`,
+                width: `${winW}%`,
+                height: `${winH}%`,
+              }}
+            >
+              {uploadedImage ? (
+                <img
+                  ref={innerImgRef}
+                  src={uploadedImage}
+                  alt="Diseño en funda"
+                  className="max-w-none max-h-none origin-center will-change-transform pointer-events-none"
+                  style={{
+                    transform: imgTransformStr,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                  }}
+                  draggable={false}
+                />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-slate-600 bg-slate-100">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-600/15 text-indigo-600 border border-indigo-500/30 flex items-center justify-center mb-2 shadow">
+                    <ImagePlus className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs uppercase tracking-wider font-semibold text-slate-800 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    Subir foto
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Foto real de la funda POR ENCIMA (marco, cámara, sombras reales) */}
+            <img
+              src={mockup.src}
+              alt={`Funda ${device.name}`}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.6)]"
+              draggable={false}
+            />
+
+            {/* Guía de área segura dentro de la ventana */}
+            {showGuides && uploadedImage && (
+              <div
+                className="absolute border-2 border-dashed border-white/60 pointer-events-none rounded-lg transition-opacity duration-200"
+                style={{
+                  left: `${winLeft}%`,
+                  top: `${winTop}%`,
+                  width: `${winW}%`,
+                  height: `${winH}%`,
+                  opacity: isInteracting ? 0.9 : 0,
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ======================================================================= */
+  /* MODO VECTORIAL (fallback): mockups sin ventana transparente utilizable.  */
+  /* ======================================================================= */
   const cornerRadiusPx = Math.round(device.dimensions.cornerRadius * 60);
 
   return (
@@ -201,9 +345,6 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
             maxHeight: '100%',
           }}
         >
-          {/* ========================================================================= */}
-          {/* 1. CAPA EXTERIOR ATENUADA: MUESTRA LA FOTO COMPLETA OSCURECIDA POR FUERA  */}
-          {/* ========================================================================= */}
           {uploadedImage && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
               <img
@@ -212,11 +353,7 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                 alt="Vista completa exterior"
                 className="max-w-none max-h-none origin-center opacity-30 brightness-[0.4] saturate-50 will-change-transform pointer-events-none"
                 style={{
-                  transform: `translate3d(${transform.x}%, ${transform.y}%, 0) scale(${
-                    transform.scale
-                  }) rotate(${transform.rotation}deg) scaleX(${
-                    transform.flipH ? -1 : 1
-                  }) scaleY(${transform.flipV ? -1 : 1})`,
+                  transform: imgTransformStr,
                   width: '100%',
                   height: '100%',
                   objectFit: 'contain',
@@ -226,13 +363,9 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
             </div>
           )}
 
-          {/* Zona de sangría superior e inferior */}
           <div className="absolute -top-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-t-sm pointer-events-none border-t border-x border-white/20 z-20" />
           <div className="absolute -bottom-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-b-sm pointer-events-none border-b border-x border-white/20 z-20" />
 
-          {/* ========================================================================= */}
-          {/* 2. CUERPO DE LA FUNDA: ÁREA PRINCIPAL NÍTIDA Y 100% ILUMINADA              */}
-          {/* ========================================================================= */}
           <div
             className="relative w-full h-full overflow-hidden shadow-2xl transition-all duration-200 border border-white/40 z-10"
             style={{
@@ -249,11 +382,7 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                   alt="Diseño en funda"
                   className="max-w-none max-h-none origin-center will-change-transform pointer-events-none"
                   style={{
-                    transform: `translate3d(${transform.x}%, ${transform.y}%, 0) scale(${
-                      transform.scale
-                    }) rotate(${transform.rotation}deg) scaleX(${
-                      transform.flipH ? -1 : 1
-                    }) scaleY(${transform.flipV ? -1 : 1})`,
+                    transform: imgTransformStr,
                     width: '100%',
                     height: '100%',
                     objectFit: 'contain',
@@ -281,10 +410,8 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
               </div>
             )}
 
-            {/* Agujero de Cámara Vectorial */}
             <CameraCutoutHole device={device} />
 
-            {/* Guía de Área Segura de Impresión */}
             {showGuides && (
               <div
                 className="absolute inset-[12px] sm:inset-[14px] border-2 border-dashed border-white/50 pointer-events-none transition-opacity duration-200 z-10"
@@ -295,7 +422,6 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
               />
             )}
 
-            {/* Borde exterior reflectante del case */}
             <div
               className="absolute inset-0 border-[2px] border-white/20 pointer-events-none z-10"
               style={{
