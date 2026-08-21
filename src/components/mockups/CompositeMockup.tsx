@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { DeviceConfig, CaseStyle, ImageTransform } from '../../types/customizer';
-import { renderCaseToCanvas } from '../../utils/caseRenderer';
+import { renderCaseToCanvas, preloadMockup, getCachedMockup, MockupData } from '../../utils/caseRenderer';
 
 interface CompositeMockupProps {
   device: DeviceConfig;
@@ -23,6 +23,9 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [userImg, setUserImg] = useState<HTMLImageElement | null>(null);
+  const [mockup, setMockup] = useState<MockupData | null>(
+    () => getCachedMockup(device.mockupImagePath)
+  );
 
   useEffect(() => {
     if (!uploadedImage) {
@@ -35,19 +38,44 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
     img.src = uploadedImage;
   }, [uploadedImage]);
 
+  // Carga y analiza el mockup fotográfico del dispositivo seleccionado.
+  useEffect(() => {
+    let active = true;
+    const cached = getCachedMockup(device.mockupImagePath);
+    setMockup(cached);
+    if (device.mockupImagePath) {
+      preloadMockup(device.mockupImagePath).then((data) => {
+        if (active) setMockup(data);
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [device.mockupImagePath]);
+
+  const usePhoto = !!mockup && mockup.hasWindow;
+
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = CANVAS_W;
-    canvas.height = CANVAS_H;
+    if (usePhoto && mockup) {
+      // Ajusta el lienzo al aspecto real de la foto del mockup.
+      canvas.width = mockup.naturalWidth;
+      canvas.height = mockup.naturalHeight;
+    } else {
+      canvas.width = CANVAS_W;
+      canvas.height = CANVAS_H;
+    }
     renderCaseToCanvas(canvas, {
       device,
       caseStyle,
       image: userImg,
       transform,
       showCamera: true,
+      mockup,
+      background: usePhoto ? '#ffffff' : undefined,
     });
-  }, [device, caseStyle, userImg, transform]);
+  }, [device, caseStyle, userImg, transform, mockup, usePhoto]);
 
   useEffect(() => {
     render();

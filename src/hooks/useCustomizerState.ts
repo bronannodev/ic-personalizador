@@ -10,7 +10,7 @@ import {
 } from '../types/customizer';
 import { BRANDS_DATA, CASE_STYLES, DEFAULT_DEVICE } from '../config/devices';
 import { TextureGenerator } from '../utils/textureGenerator';
-import { exportCaseDataUrl } from '../utils/caseRenderer';
+import { exportCaseDataUrl, preloadMockup, getCachedMockup } from '../utils/caseRenderer';
 import { calculatePrintQuality } from '../utils/printQualityUtils';
 
 const DEFAULT_TRANSFORM: ImageTransform = {
@@ -41,6 +41,14 @@ export function useCustomizerState() {
 
   const textureGeneratorRef = useRef<TextureGenerator | null>(null);
   const [customTexture, setCustomTexture] = useState<THREE.CanvasTexture | null>(null);
+
+  // Precarga y analiza el mockup fotográfico del dispositivo seleccionado para
+  // que la exportación/WhatsApp use la foto real de la funda.
+  useEffect(() => {
+    if (selectedDevice.mockupImagePath) {
+      preloadMockup(selectedDevice.mockupImagePath);
+    }
+  }, [selectedDevice.mockupImagePath]);
 
   useEffect(() => {
     const generator = new TextureGenerator();
@@ -199,6 +207,7 @@ export function useCustomizerState() {
       caseStyle: selectedCaseStyle,
       image: uploadedImageElement,
       transform: imageTransform,
+      mockup: getCachedMockup(selectedDevice.mockupImagePath),
     });
   }, [selectedDevice, selectedCaseStyle, uploadedImageElement, imageTransform]);
 

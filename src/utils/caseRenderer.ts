@@ -29,6 +29,163 @@ export interface RenderCaseOptions {
   showCamera?: boolean;
   /** Margen alrededor de la funda como fracción del lado menor del lienzo. */
   marginRatio?: number;
+  /**
+   * Mockup fotográfico ya analizado. Si tiene una ventana transparente válida,
+   * el render usa la FOTO REAL de la funda con la imagen incrustada. Si es null
+   * o no tiene ventana, cae automáticamente al render vectorial.
+   */
+  mockup?: MockupData | null;
+}
+
+/* ========================================================================== */
+/* Composición fotográfica: usa los PNG reales de MockupsV2.                   */
+/* ========================================================================== */
+
+export interface MockupData {
+  src: string;
+  image: HTMLImageElement;
+  naturalWidth: number;
+  naturalHeight: number;
+  /** true si el PNG tiene una ventana transparente utilizable para el diseño. */
+  hasWindow: boolean;
+  /** Caja de la ventana transparente en píxeles del PNG. */
+  window: { x: number; y: number; w: number; h: number } | null;
+  /** Máscara (blanco = ventana del diseño, transparente = marco/cámara). */
+  mask: HTMLCanvasElement | null;
+}
+
+const mockupCache = new Map<string, MockupData>();
+const mockupPromises = new Map<string, Promise<MockupData>>();
+
+/** Devuelve el mockup ya analizado (o null si aún no se cargó). Síncrono. */
+export function getCachedMockup(src: string | undefined | null): MockupData | null {
+  if (!src) return null;
+  return mockupCache.get(src) ?? null;
+}
+
+/** Carga y analiza un mockup (idempotente y cacheado). */
+export function preloadMockup(src: string): Promise<MockupData> {
+  const cached = mockupCache.get(src);
+  if (cached) return Promise.resolve(cached);
+  const pending = mockupPromises.get(src);
+  if (pending) return pending;
+
+  const promise = new Promise<MockupData>((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const data = analyzeMockup(src, img);
+      mockupCache.set(src, data);
+      mockupPromises.delete(src);
+      resolve(data);
+    };
+    img.onerror = () => {
+      const data: MockupData = {
+        src,
+        image: img,
+        naturalWidth: 0,
+        naturalHeight: 0,
+        hasWindow: false,
+        window: null,
+        mask: null,
+      };
+      mockupCache.set(src, data);
+      mockupPromises.delete(src);
+      resolve(data);
+    };
+    img.src = src;
+  });
+  mockupPromises.set(src, promise);
+  return promise;
+}
+
+/**
+ * Analiza el canal alfa del PNG para detectar la ventana transparente (donde
+ * va el diseño) y construir una máscara de recorte. Adaptativo por imagen, así
+ * que no depende de que todos los mockups tengan la ventana en el mismo lugar.
+ */
+function analyzeMockup(src: string, img: HTMLImageElement): MockupData {
+  const natW = img.naturalWidth;
+  const natH = img.naturalHeight;
+  const fail: MockupData = {
+    src,
+    image: img,
+    naturalWidth: natW,
+    naturalHeight: natH,
+    hasWindow: false,
+    window: null,
+    mask: null,
+  };
+  if (!natW || !natH) return fail;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = natW;
+  canvas.height = natH;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return fail;
+  ctx.drawImage(img, 0, 0);
+
+  let data: ImageData;
+  try {
+    data = ctx.getImageData(0, 0, natW, natH);
+  } catch {
+    return fail;
+  }
+  const px = data.data;
+  const threshold = 40;
+
+  const mask = document.createElement('canvas');
+  mask.width = natW;
+  mask.height = natH;
+  const mctx = mask.getContext('2d');
+  if (!mctx) return fail;
+  const maskData = mctx.createImageData(natW, natH);
+  const md = maskData.data;
+
+  let minX = natW;
+  let minY = natH;
+  let maxX = 0;
+  let maxY = 0;
+  let count = 0;
+  const totalPixels = natW * natH;
+
+  for (let i = 0; i < totalPixels; i++) {
+    const alpha = px[i * 4 + 3];
+    if (alpha < threshold) {
+      count++;
+      const x = i % natW;
+      const y = (i / natW) | 0;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      md[i * 4] = 255;
+      md[i * 4 + 1] = 255;
+      md[i * 4 + 2] = 255;
+      md[i * 4 + 3] = 255;
+    } else {
+      md[i * 4 + 3] = 0;
+    }
+  }
+  mctx.putImageData(maskData, 0, 0);
+
+  const frac = count / totalPixels;
+  const boxW = maxX - minX;
+  const boxH = maxY - minY;
+  // Ventana válida: suficiente área transparente, con forma de recuadro central
+  // (no toda la imagen), y no degenerada.
+  const spansAlmostEverything = boxW > natW * 0.94 && boxH > natH * 0.94;
+  const hasWindow = frac >= 0.06 && frac < 0.85 && boxW > 8 && boxH > 8 && !spansAlmostEverything;
+
+  return {
+    src,
+    image: img,
+    naturalWidth: natW,
+    naturalHeight: natH,
+    hasWindow,
+    window: hasWindow ? { x: minX, y: minY, w: boxW, h: boxH } : null,
+    mask: hasWindow ? mask : null,
+  };
 }
 
 interface CaseRect {
@@ -201,6 +358,111 @@ function drawCameraCutout(
  * Dibuja la funda completa en el lienzo indicado.
  * El lienzo debe tener ya sus dimensiones (canvas.width / canvas.height) fijadas.
  */
+/** Rectángulo destino (contain) del mockup dentro del lienzo. */
+export function computeMockupRect(
+  W: number,
+  H: number,
+  mockup: MockupData,
+  marginRatio = 0.02
+): { dx: number; dy: number; dw: number; dh: number } {
+  const margin = Math.min(W, H) * marginRatio;
+  const availW = W - margin * 2;
+  const availH = H - margin * 2;
+  const s = Math.min(availW / mockup.naturalWidth, availH / mockup.naturalHeight);
+  const dw = mockup.naturalWidth * s;
+  const dh = mockup.naturalHeight * s;
+  return { dx: (W - dw) / 2, dy: (H - dh) / 2, dw, dh };
+}
+
+/** Ventana del diseño (en coordenadas del lienzo) para un mockup ya colocado. */
+export function computeWindowRectOnCanvas(
+  W: number,
+  H: number,
+  mockup: MockupData,
+  marginRatio = 0.02
+): { x: number; y: number; w: number; h: number } | null {
+  if (!mockup.hasWindow || !mockup.window) return null;
+  const { dx, dy, dw, dh } = computeMockupRect(W, H, mockup, marginRatio);
+  const win = mockup.window;
+  return {
+    x: dx + (win.x / mockup.naturalWidth) * dw,
+    y: dy + (win.y / mockup.naturalHeight) * dh,
+    w: (win.w / mockup.naturalWidth) * dw,
+    h: (win.h / mockup.naturalHeight) * dh,
+  };
+}
+
+/**
+ * Composición fotográfica: dibuja la imagen del cliente detrás del PNG real de
+ * la funda, recortada exactamente a la ventana transparente del mockup. El
+ * resultado es la foto real del producto con el diseño incrustado.
+ */
+function renderPhotographic(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  mockup: MockupData,
+  image: HTMLImageElement | null,
+  transform: ImageTransform,
+  background?: string,
+  marginRatio = 0.02
+): void {
+  ctx.clearRect(0, 0, W, H);
+  if (background) {
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const { dx, dy, dw, dh } = computeMockupRect(W, H, mockup, marginRatio);
+  const winRect = computeWindowRectOnCanvas(W, H, mockup, marginRatio)!;
+
+  if (image && mockup.mask) {
+    // Lienzo auxiliar para el diseño (permite recortarlo con la máscara).
+    const design = document.createElement('canvas');
+    design.width = W;
+    design.height = H;
+    const dctx = design.getContext('2d');
+    if (dctx) {
+      const imgAspect = image.naturalWidth / image.naturalHeight;
+      const winAspect = winRect.w / winRect.h;
+      let baseW: number;
+      let baseH: number;
+      if (imgAspect > winAspect) {
+        baseW = winRect.w;
+        baseH = winRect.w / imgAspect;
+      } else {
+        baseH = winRect.h;
+        baseW = winRect.h * imgAspect;
+      }
+
+      // Desplazamiento porcentual RELATIVO A LA VENTANA (igual que el editor).
+      const offsetX = (transform.x / 100) * winRect.w;
+      const offsetY = (transform.y / 100) * winRect.h;
+      const centerX = winRect.x + winRect.w / 2 + offsetX;
+      const centerY = winRect.y + winRect.h / 2 + offsetY;
+      const drawW = baseW * transform.scale;
+      const drawH = baseH * transform.scale;
+
+      dctx.save();
+      dctx.translate(centerX, centerY);
+      dctx.rotate((transform.rotation * Math.PI) / 180);
+      dctx.scale(transform.flipH ? -1 : 1, transform.flipV ? -1 : 1);
+      dctx.drawImage(image, -drawW / 2, -drawH / 2, drawW, drawH);
+      dctx.restore();
+
+      // Recorta el diseño a la forma exacta de la ventana transparente.
+      dctx.globalCompositeOperation = 'destination-in';
+      dctx.drawImage(mockup.mask, dx, dy, dw, dh);
+      dctx.globalCompositeOperation = 'source-over';
+
+      ctx.drawImage(design, 0, 0);
+    }
+  }
+
+  // La foto real de la funda va ENCIMA: su marco/cámara cubren los bordes.
+  ctx.drawImage(mockup.image, dx, dy, dw, dh);
+}
+
 export function renderCaseToCanvas(
   canvas: HTMLCanvasElement,
   options: RenderCaseOptions
@@ -212,6 +474,21 @@ export function renderCaseToCanvas(
   const H = canvas.height;
   const { device, caseStyle, image, transform } = options;
   const showCamera = options.showCamera !== false;
+
+  // Modo fotográfico: si hay un mockup con ventana transparente válida.
+  if (options.mockup && options.mockup.hasWindow) {
+    renderPhotographic(
+      ctx,
+      W,
+      H,
+      options.mockup,
+      image,
+      transform,
+      options.background,
+      options.marginRatio ?? 0.02
+    );
+    return;
+  }
 
   ctx.clearRect(0, 0, W, H);
 
@@ -264,13 +541,27 @@ export function renderCaseToCanvas(
  * Usa el mismo renderizador canónico, garantizando coincidencia con el editor.
  */
 export function exportCaseDataUrl(options: RenderCaseOptions, height = 1600): string {
+  const canvas = document.createElement('canvas');
+
+  if (options.mockup && options.mockup.hasWindow) {
+    // Usa la relación de aspecto real de la foto del mockup.
+    const ratio = options.mockup.naturalWidth / options.mockup.naturalHeight;
+    canvas.height = height;
+    canvas.width = Math.round(height * ratio) + 2;
+    renderCaseToCanvas(canvas, {
+      ...options,
+      background: options.background ?? '#ffffff',
+      marginRatio: options.marginRatio ?? 0.02,
+    });
+    return canvas.toDataURL('image/jpeg', 0.92);
+  }
+
   const rectRatioW =
     options.device.dimensions.realWidthMm || options.device.dimensions.width * 25.4;
   const rectRatioH =
     options.device.dimensions.realHeightMm || options.device.dimensions.height * 25.4;
   const widthRatio = rectRatioW / rectRatioH;
 
-  const canvas = document.createElement('canvas');
   canvas.height = height;
   canvas.width = Math.round(height * widthRatio * 1.18) + 2; // margen lateral
   renderCaseToCanvas(canvas, {
