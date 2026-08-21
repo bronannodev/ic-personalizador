@@ -232,6 +232,12 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
     const winTop = (win.y / mockup.naturalHeight) * 100;
     const winW = (win.w / mockup.naturalWidth) * 100;
     const winH = (win.h / mockup.naturalHeight) * 100;
+    const overflowRegions = [
+      { x: 0, y: 0, w: 100, h: winTop },
+      { x: 0, y: winTop + winH, w: 100, h: 100 - winTop - winH },
+      { x: 0, y: winTop, w: winLeft, h: winH },
+      { x: winLeft + winW, y: winTop, w: 100 - winLeft - winW, h: winH },
+    ].filter((region) => region.w > 0 && region.h > 0);
 
     return (
       <div
@@ -278,7 +284,7 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
               }`}
               style={{ aspectRatio: `${mockAspect}`, height: '82%', marginBottom: '4%' }}
             >
-              {/* Ventana del diseño: la imagen del cliente recortada al hueco real */}
+              {/* Área imprimible: imagen completa inicialmente, recortada al imprimir */}
               <div
                 className="absolute overflow-hidden"
                 style={{
@@ -298,7 +304,7 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                       transform: imgTransformStr,
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover',
+                      objectFit: 'contain',
                     }}
                     draggable={false}
                   />
@@ -322,6 +328,48 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
                 draggable={false}
               />
+
+              {/*
+                Solo las partes que cruzan el límite se repiten atenuadas sobre
+                el mockup. Las cuatro tiras forman un recorte con hueco central.
+              */}
+              {uploadedImage &&
+                overflowRegions.map((region, index) => (
+                  <div
+                    key={index}
+                    className="absolute overflow-hidden pointer-events-none"
+                    style={{
+                      left: `${region.x}%`,
+                      top: `${region.y}%`,
+                      width: `${region.w}%`,
+                      height: `${region.h}%`,
+                    }}
+                  >
+                    <div
+                      className="absolute"
+                      style={{
+                        left: `${((winLeft - region.x) / region.w) * 100}%`,
+                        top: `${((winTop - region.y) / region.h) * 100}%`,
+                        width: `${(winW / region.w) * 100}%`,
+                        height: `${(winH / region.h) * 100}%`,
+                      }}
+                    >
+                      <img
+                        src={uploadedImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="max-w-none max-h-none origin-center will-change-transform opacity-30 brightness-50 saturate-50"
+                        style={{
+                          transform: imgTransformStr,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                        }}
+                        draggable={false}
+                      />
+                    </div>
+                  </div>
+                ))}
 
               {/* Guía de área segura dentro de la ventana */}
               {showGuides && uploadedImage && (
