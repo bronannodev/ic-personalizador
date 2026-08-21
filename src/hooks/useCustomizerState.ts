@@ -10,6 +10,7 @@ import {
 } from '../types/customizer';
 import { BRANDS_DATA, CASE_STYLES, DEFAULT_DEVICE } from '../config/devices';
 import { TextureGenerator } from '../utils/textureGenerator';
+import { exportCaseDataUrl } from '../utils/caseRenderer';
 import { calculatePrintQuality } from '../utils/printQualityUtils';
 
 const DEFAULT_TRANSFORM: ImageTransform = {
@@ -190,11 +191,16 @@ export function useCustomizerState() {
   }, []);
 
   const exportPreviewImage = useCallback((): string => {
-    if (textureGeneratorRef.current) {
-      return textureGeneratorRef.current.exportPreviewDataUrl();
-    }
-    return '';
-  }, []);
+    // Usa el MISMO renderizador canónico que el editor y la vista previa del
+    // Paso 3, de modo que la imagen descargada/enviada por WhatsApp coincida
+    // exactamente con lo que el usuario diseñó.
+    return exportCaseDataUrl({
+      device: selectedDevice,
+      caseStyle: selectedCaseStyle,
+      image: uploadedImageElement,
+      transform: imageTransform,
+    });
+  }, [selectedDevice, selectedCaseStyle, uploadedImageElement, imageTransform]);
 
   const state: CustomizerState = {
     selectedBrand,
