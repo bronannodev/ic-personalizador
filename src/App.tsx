@@ -15,13 +15,18 @@ import {
   MessageCircle,
   RotateCcw,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { uploadToCloudinary, deleteFromCloudinary } from './utils/cloudinary';
 
 export function App() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [activeStep, setActiveStep] = useState<number>(1);
   const [isTransformPanelOpen, setIsTransformPanelOpen] = useState(false);
+  const [isCloudinaryProcessing, setIsCloudinaryProcessing] = useState<boolean>(false);
+  const [cloudinaryMockupUrl, setCloudinaryMockupUrl] = useState<string | null>(null);
+  const [lastCloudinaryPublicId, setLastCloudinaryPublicId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -53,37 +58,52 @@ export function App() {
     fileInputRef.current?.click();
   };
 
-  const handleWhatsAppOrder = async () => {
-    const message = `Hola! Quiero encargar la funda personalizada para *${state.selectedDevice.name}* (Marca: ${state.selectedBrand.toUpperCase()}). ¿Que precio tiene?`;
-    const defaultWhatsAppNumber = '5491123456789';
+  const handleResetToStep1 = () => {
+    // Si había una imagen subida en Cloudinary pero el usuario reinicia, la borramos en segundo plano
+    if (lastCloudinaryPublicId) {
+      deleteFromCloudinary(lastCloudinaryPublicId);
+      setLastCloudinaryPublicId(null);
+      setCloudinaryMockupUrl(null);
+    }
+    setActiveStep(1);
+  };
 
-    const previewUrl = exportPreviewImage();
-
-    if (previewUrl && navigator.canShare) {
-      try {
-        const res = await fetch(previewUrl);
-        const blob = await res.blob();
-        const file = new File([blob], `funda-${state.selectedDevice.id}.jpg`, { type: 'image/jpeg' });
-
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: `Funda ${state.selectedDevice.name}`,
-            text: message,
-            files: [file],
-          });
-          return;
+  const handleGoToStep3 = async () => {
+    setActiveStep(3);
+    setIsCloudinaryProcessing(true);
+    try {
+      const previewUrl = exportPreviewImage();
+      if (previewUrl) {
+        // Borrar la anterior si existía para no duplicar
+        if (lastCloudinaryPublicId) {
+          deleteFromCloudinary(lastCloudinaryPublicId);
         }
-      } catch {
-        // Fallback a enlace directo si el usuario cancela o no es compatible
+        const uploadRes = await uploadToCloudinary(previewUrl, 'pedidos');
+        if (uploadRes) {
+          setCloudinaryMockupUrl(uploadRes.secureUrl);
+          setLastCloudinaryPublicId(uploadRes.publicId);
+        }
       }
+    } catch (err) {
+      console.error('Error procesando Cloudinary:', err);
+    } finally {
+      setIsCloudinaryProcessing(false);
+    }
+  };
+
+  const handleWhatsAppOrder = () => {
+    let message = `Hola! Quiero encargar la funda personalizada para *${state.selectedDevice.name}* (Marca: ${state.selectedBrand.toUpperCase()}). ¿Que precio tiene?`;
+    if (cloudinaryMockupUrl) {
+      message += `\n\nDiseño: ${cloudinaryMockupUrl}`;
     }
 
+    const defaultWhatsAppNumber = '5491123456789';
     const whatsappUrl = `https://wa.me/${defaultWhatsAppNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const handleDownloadPreview = () => {
-    const previewUrl = exportPreviewImage();
+    const previewUrl = cloudinaryMockupUrl || exportPreviewImage();
     if (previewUrl) {
       const link = document.createElement('a');
       link.href = previewUrl;
@@ -206,7 +226,7 @@ export function App() {
             <header className="w-full z-30 px-3 sm:px-6 pt-3 flex items-center justify-between pointer-events-none">
               <button
                 type="button"
-                onClick={() => setActiveStep(1)}
+                onClick={handleResetToStep1}
                 className="pointer-events-auto flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-slate-200 border border-white/15 backdrop-blur-xl transition-all text-xs font-medium shadow-md active:scale-95"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -277,7 +297,7 @@ export function App() {
 
                   <button
                     type="button"
-                    onClick={() => setActiveStep(3)}
+                    onClick={handleGoToStep3}
                     className="w-full py-3 px-6 rounded-lg bg-white text-slate-950 hover:bg-slate-100 active:scale-[0.99] font-semibold text-sm flex items-center justify-center space-x-2 shadow-md transition-all"
                   >
                     <span>Ver funda terminada</span>
@@ -297,7 +317,7 @@ export function App() {
 
                   <button
                     type="button"
-                    onClick={() => setActiveStep(3)}
+                    onClick={handleGoToStep3}
                     className="py-3 px-4 rounded-lg bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-medium transition-all"
                   >
                     Omitir
@@ -309,7 +329,7 @@ export function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 3: FUNDA TERMINADA / MAQUETA FINAL                                   */}
+        {/* PASO 3: FUNDA TERMINADA / MAQUETA FINAL CON ESCENAS                       */}
         {/* ========================================================================= */}
         {activeStep === 3 && (
           <motion.div
@@ -340,22 +360,50 @@ export function App() {
             {/* Vista de Maqueta Central */}
             <main className="relative flex-1 w-full flex items-center justify-center overflow-hidden p-2">
               <div className="w-full max-w-lg h-full flex items-center justify-center">
-                <CompositeMockup
-                  device={state.selectedDevice}
-                  caseStyle={state.selectedCaseStyle}
-                  uploadedImage={state.uploadedImage}
-                  transform={state.imageTransform}
-                />
+                {isCloudinaryProcessing ? (
+                  <div className="w-full max-w-[360px] sm:max-w-[420px] bg-[#10121a]/95 border border-white/15 rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center space-y-4 shadow-2xl backdrop-blur-2xl">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                      <Sparkles className="w-6 h-6 animate-pulse" />
+                    </div>
+
+                    <div className="text-center space-y-1">
+                      <p className="text-sm font-semibold text-white">
+                        Procesando maqueta final...
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Generando render fotorrealista en alta resolución
+                      </p>
+                    </div>
+
+                    {/* Barra de progreso animada */}
+                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-full"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <CompositeMockup
+                    device={state.selectedDevice}
+                    caseStyle={state.selectedCaseStyle}
+                    uploadedImage={state.uploadedImage}
+                    transform={state.imageTransform}
+                  />
+                )}
               </div>
             </main>
 
-            {/* Acciones directas y minimalistas (Sin modal extra) */}
+            {/* Acciones directas */}
             <footer className="w-full z-30 px-4 sm:px-6 pb-4 sm:pb-6 pt-2 flex flex-col items-center gap-2 bg-gradient-to-t from-[#07080c] via-[#07080c]/80 to-transparent">
               <div className="w-full max-w-md space-y-2">
                 <button
                   type="button"
                   onClick={handleWhatsAppOrder}
-                  className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/50 transition-all"
+                  disabled={isCloudinaryProcessing}
+                  className="w-full py-3.5 px-6 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 active:scale-[0.99] text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-950/50 transition-all"
                 >
                   <MessageCircle className="w-4.5 h-4.5 fill-current" />
                   <span>Pedir esta funda por WhatsApp</span>
@@ -365,7 +413,8 @@ export function App() {
                   <button
                     type="button"
                     onClick={handleDownloadPreview}
-                    className="flex-1 py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+                    disabled={isCloudinaryProcessing}
+                    className="flex-1 py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 disabled:opacity-50 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Guardar diseño</span>
@@ -381,7 +430,7 @@ export function App() {
 
                   <button
                     type="button"
-                    onClick={() => setActiveStep(1)}
+                    onClick={handleResetToStep1}
                     className="py-2 px-3 rounded-lg bg-white/[0.06] hover:bg-white/15 border border-white/10 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-all"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />

@@ -52,22 +52,30 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
 
     ctx.clearRect(0, 0, W, H);
 
-    const isIphone17ProMax = device.id === 'iphone-17-pro-max';
-    const isProMaxOrPlus =
-      device.id.includes('pro-max') ||
-      device.id.includes('promax') ||
-      device.id.includes('plus');
+    const realWidth = device.dimensions.realWidthMm || device.dimensions.width * 25.4;
+    const realHeight = device.dimensions.realHeightMm || device.dimensions.height * 25.4;
+    const widthRatio = realWidth / realHeight;
 
-    let centerX = W * 0.508;
-    let centerY = H * 0.496;
-    let caseW = isProMaxOrPlus ? W * 0.385 : W * 0.370;
-    let caseH = H * 0.762;
+    let caseH = H * 0.815;
+    let caseW = caseH * widthRatio;
+    let centerX = W * 0.505;
+    let centerY = H * 0.485;
 
-    if (isIphone17ProMax) {
+    if (device.id === 'iphone-17-pro-max') {
+      caseH = H * 0.58;
+      caseW = caseH * widthRatio;
       centerX = W * 0.465;
       centerY = H * 0.605;
-      caseW = W * 0.540;
-      caseH = H * 0.535;
+    } else if (device.id === 'iphone-17-air') {
+      caseH = H * 0.68;
+      caseW = caseH * widthRatio;
+      centerX = W * 0.495;
+      centerY = H * 0.580;
+    } else if (device.id === 'iphone-17') {
+      caseH = H * 0.80;
+      caseW = caseH * widthRatio;
+      centerX = W * 0.505;
+      centerY = H * 0.475;
     }
 
     if (userImg) {
@@ -77,28 +85,31 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
       const offsetY = (transform.y / 100) * (caseH / 2);
 
       ctx.translate(centerX + offsetX, centerY + offsetY);
-      ctx.scale(transform.scale, transform.scale);
       ctx.rotate((transform.rotation * Math.PI) / 180);
       ctx.scale(transform.flipH ? -1 : 1, transform.flipV ? -1 : 1);
 
       const imgAspect = userImg.naturalWidth / userImg.naturalHeight;
       const caseAspect = caseW / caseH;
-      let drawW: number, drawH: number;
+      let baseW: number, baseH: number;
 
+      // Base: contain (imagen completa sin recortar de inicio)
       if (imgAspect > caseAspect) {
-        drawH = caseH;
-        drawW = caseH * imgAspect;
+        baseW = caseW;
+        baseH = caseW / imgAspect;
       } else {
-        drawW = caseW;
-        drawH = caseW / imgAspect;
+        baseH = caseH;
+        baseW = caseH * imgAspect;
       }
+
+      const drawW = baseW * transform.scale;
+      const drawH = baseH * transform.scale;
 
       ctx.drawImage(userImg, -drawW / 2, -drawH / 2, drawW, drawH);
       ctx.restore();
     }
 
     ctx.drawImage(mockupImg, 0, 0, W, H);
-  }, [mockupImg, userImg, transform, device.id]);
+  }, [mockupImg, userImg, transform, device]);
 
   useEffect(() => {
     render();
@@ -106,15 +117,15 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center p-2 select-none">
-      <div className="relative flex items-center justify-center w-full max-w-[360px] sm:max-w-[420px] md:max-w-[460px] bg-white rounded-[32px] p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/20">
+      <div className="relative flex items-center justify-center w-full max-w-[360px] sm:max-w-[420px] md:max-w-[460px] bg-white rounded-xl p-2.5 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/20">
         <canvas
           ref={canvasRef}
-          className="w-full h-auto max-h-[70vh] object-contain rounded-2xl"
+          className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
         />
 
         {!uploadedImage && mockupImg && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
-            <div className="bg-black/75 backdrop-blur-md rounded-2xl px-6 py-4 text-center border border-white/15 shadow-2xl">
+            <div className="bg-black/75 backdrop-blur-md rounded-xl px-6 py-4 text-center border border-white/15 shadow-2xl">
               <p className="text-sm font-semibold text-white">Subí tu diseño</p>
               <p className="text-xs text-slate-300 mt-1">para ver la funda terminada</p>
             </div>
@@ -122,7 +133,7 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
         )}
 
         {!mockupImg && (
-          <div className="w-full aspect-square flex items-center justify-center bg-slate-100 rounded-2xl">
+          <div className="w-full aspect-square flex items-center justify-center bg-slate-100 rounded-xl">
             <div className="flex flex-col items-center space-y-3">
               <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-xs text-slate-600 font-medium">Cargando maqueta...</p>

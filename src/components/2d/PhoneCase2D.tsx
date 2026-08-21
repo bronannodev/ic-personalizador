@@ -22,7 +22,8 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
   showGuides = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
+  const innerImgRef = useRef<HTMLImageElement>(null);
+  const outerImgRef = useRef<HTMLImageElement>(null);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number; initX: number; initY: number }>({
     x: 0,
@@ -51,10 +52,16 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
   const bgColor = isTransparent ? 'rgba(255, 255, 255, 0.12)' : caseStyle.color;
 
   const updateImgStyle = (x: number, y: number, scale: number) => {
-    if (!imgRef.current) return;
-    imgRef.current.style.transform = `translate3d(${x}%, ${y}%, 0) scale(${scale}) rotate(${
+    const transformStr = `translate3d(${x}%, ${y}%, 0) scale(${scale}) rotate(${
       transform.rotation
     }deg) scaleX(${transform.flipH ? -1 : 1}) scaleY(${transform.flipV ? -1 : 1})`;
+
+    if (innerImgRef.current) {
+      innerImgRef.current.style.transform = transformStr;
+    }
+    if (outerImgRef.current) {
+      outerImgRef.current.style.transform = transformStr;
+    }
   };
 
   const handlePointerDown = useCallback(
@@ -194,26 +201,53 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
             maxHeight: '100%',
           }}
         >
-          {/* Zona de sangría superior e inferior */}
-          <div className="absolute -top-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-t-sm pointer-events-none border-t border-x border-white/20" />
-          <div className="absolute -bottom-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-b-sm pointer-events-none border-b border-x border-white/20" />
+          {/* ========================================================================= */}
+          {/* 1. CAPA EXTERIOR ATENUADA: MUESTRA LA FOTO COMPLETA OSCURECIDA POR FUERA  */}
+          {/* ========================================================================= */}
+          {uploadedImage && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+              <img
+                ref={outerImgRef}
+                src={uploadedImage}
+                alt="Vista completa exterior"
+                className="max-w-none max-h-none origin-center opacity-30 brightness-[0.4] saturate-50 will-change-transform pointer-events-none"
+                style={{
+                  transform: `translate3d(${transform.x}%, ${transform.y}%, 0) scale(${
+                    transform.scale
+                  }) rotate(${transform.rotation}deg) scaleX(${
+                    transform.flipH ? -1 : 1
+                  }) scaleY(${transform.flipV ? -1 : 1})`,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+                draggable={false}
+              />
+            </div>
+          )}
 
-          {/* Cuerpo de la Funda */}
+          {/* Zona de sangría superior e inferior */}
+          <div className="absolute -top-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-t-sm pointer-events-none border-t border-x border-white/20 z-20" />
+          <div className="absolute -bottom-3.5 left-0 right-0 h-3.5 bg-[repeating-linear-gradient(45deg,#474b59,#474b59_7px,#2c2f38_7px,#2c2f38_14px)] opacity-60 rounded-b-sm pointer-events-none border-b border-x border-white/20 z-20" />
+
+          {/* ========================================================================= */}
+          {/* 2. CUERPO DE LA FUNDA: ÁREA PRINCIPAL NÍTIDA Y 100% ILUMINADA              */}
+          {/* ========================================================================= */}
           <div
-            className="relative w-full h-full overflow-hidden shadow-2xl transition-all duration-200 border border-white/30"
+            className="relative w-full h-full overflow-hidden shadow-2xl transition-all duration-200 border border-white/40 z-10"
             style={{
               borderRadius: `${cornerRadiusPx}px`,
               backgroundColor: bgColor,
-              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 2px rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 2px rgba(255, 255, 255, 0.2)',
             }}
           >
             {uploadedImage ? (
               <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
                 <img
-                  ref={imgRef}
+                  ref={innerImgRef}
                   src={uploadedImage}
-                  alt="Diseño personalizado"
-                  className="max-w-none origin-center will-change-transform"
+                  alt="Diseño en funda"
+                  className="max-w-none max-h-none origin-center will-change-transform pointer-events-none"
                   style={{
                     transform: `translate3d(${transform.x}%, ${transform.y}%, 0) scale(${
                       transform.scale
@@ -222,7 +256,7 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
                     }) scaleY(${transform.flipV ? -1 : 1})`,
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover',
+                    objectFit: 'contain',
                   }}
                   draggable={false}
                 />
@@ -247,10 +281,10 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
               </div>
             )}
 
-            {/* Agujero de Cámara Vectorial Nítido */}
+            {/* Agujero de Cámara Vectorial */}
             <CameraCutoutHole device={device} />
 
-            {/* Guía de Área Segura */}
+            {/* Guía de Área Segura de Impresión */}
             {showGuides && (
               <div
                 className="absolute inset-[12px] sm:inset-[14px] border-2 border-dashed border-white/50 pointer-events-none transition-opacity duration-200 z-10"
@@ -261,7 +295,7 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
               />
             )}
 
-            {/* Borde exterior */}
+            {/* Borde exterior reflectante del case */}
             <div
               className="absolute inset-0 border-[2px] border-white/20 pointer-events-none z-10"
               style={{

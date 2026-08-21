@@ -1,29 +1,22 @@
 import * as THREE from 'three';
-import { CaseStyle, DeviceConfig, ImageTransform } from '../types/customizer';
+import { DeviceConfig, ImageTransform, CaseStyle } from '../types/customizer';
 
 export class TextureGenerator {
   private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
-  private texture: THREE.CanvasTexture;
-  private width: number = 1024;
-  private height: number = 2048;
+  private ctx: CanvasRenderingContext2D | null;
+  public texture: THREE.CanvasTexture;
 
-  constructor() {
+  constructor(width: number = 2048, height: number = 2048) {
     this.canvas = document.createElement('canvas');
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
-    const context = this.canvas.getContext('2d', { willReadFrequently: false });
-    if (!context) {
-      throw new Error('No se pudo inicializar el contexto 2D del Canvas');
-    }
-    this.ctx = context;
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.ctx = this.canvas.getContext('2d');
 
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
     this.texture.minFilter = THREE.LinearMipmapLinearFilter;
     this.texture.magFilter = THREE.LinearFilter;
     this.texture.generateMipmaps = true;
-    this.texture.anisotropy = 16;
   }
 
   public getTexture(): THREE.CanvasTexture {
@@ -36,37 +29,27 @@ export class TextureGenerator {
     caseStyle: CaseStyle,
     device: DeviceConfig
   ): void {
+    if (!this.ctx) return;
+
     const ctx = this.ctx;
-    const w = this.width;
-    const h = this.height;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
 
     ctx.clearRect(0, 0, w, h);
 
-    if (caseStyle.transmission > 0.5) {
-      ctx.fillStyle = 'rgba(240, 245, 255, 0.15)';
-      ctx.fillRect(0, 0, w, h);
-    } else {
-      ctx.fillStyle = caseStyle.color;
-      ctx.fillRect(0, 0, w, h);
-    }
+    const isTransparent = caseStyle.transmission > 0.5;
+    ctx.fillStyle = isTransparent ? 'rgba(255, 255, 255, 0.05)' : caseStyle.color;
+    ctx.fillRect(0, 0, w, h);
 
-    if (image && image.complete && image.naturalWidth > 0) {
+    if (image) {
       ctx.save();
-
-      const centerX = w / 2;
-      const centerY = h / 2;
 
       const offsetX = (transform.x / 100) * (w / 2);
       const offsetY = (transform.y / 100) * (h / 2);
 
-      ctx.translate(centerX + offsetX, centerY + offsetY);
-
-      const rad = (transform.rotation * Math.PI) / 180;
-      ctx.rotate(rad);
-
-      const scaleX = transform.flipH ? -1 : 1;
-      const scaleY = transform.flipV ? -1 : 1;
-      ctx.scale(scaleX, scaleY);
+      ctx.translate(w / 2 + offsetX, h / 2 + offsetY);
+      ctx.rotate((transform.rotation * Math.PI) / 180);
+      ctx.scale(transform.flipH ? -1 : 1, transform.flipV ? -1 : 1);
 
       const imgRatio = image.naturalWidth / image.naturalHeight;
       const canvasRatio = w / h;
@@ -75,11 +58,11 @@ export class TextureGenerator {
       let baseDrawHeight = h;
 
       if (imgRatio > canvasRatio) {
-        baseDrawHeight = h;
-        baseDrawWidth = h * imgRatio;
-      } else {
         baseDrawWidth = w;
         baseDrawHeight = w / imgRatio;
+      } else {
+        baseDrawHeight = h;
+        baseDrawWidth = h * imgRatio;
       }
 
       const drawW = baseDrawWidth * transform.scale;
