@@ -10,7 +10,13 @@ import {
 } from '../types/customizer';
 import { BRANDS_DATA, CASE_STYLES, DEFAULT_DEVICE } from '../config/devices';
 import { TextureGenerator } from '../utils/textureGenerator';
-import { exportCaseDataUrl, preloadMockup, getCachedMockup } from '../utils/caseRenderer';
+import {
+  exportSceneDataUrl,
+  preloadMockup,
+  getCachedMockup,
+  preloadStudioBackground,
+  getStudioBackground,
+} from '../utils/caseRenderer';
 import { calculatePrintQuality } from '../utils/printQualityUtils';
 
 const DEFAULT_TRANSFORM: ImageTransform = {
@@ -49,6 +55,11 @@ export function useCustomizerState() {
       preloadMockup(selectedDevice.mockupImagePath);
     }
   }, [selectedDevice.mockupImagePath]);
+
+  // Precarga el fondo de estudio para la escena de presentación/exportación.
+  useEffect(() => {
+    preloadStudioBackground();
+  }, []);
 
   useEffect(() => {
     const generator = new TextureGenerator();
@@ -199,15 +210,16 @@ export function useCustomizerState() {
   }, []);
 
   const exportPreviewImage = useCallback((): string => {
-    // Usa el MISMO renderizador canónico que el editor y la vista previa del
-    // Paso 3, de modo que la imagen descargada/enviada por WhatsApp coincida
-    // exactamente con lo que el usuario diseñó.
-    return exportCaseDataUrl({
+    // Usa la MISMA escena de estudio que la vista previa del Paso 3 (fondo de
+    // estudio + funda con sombra), de modo que la imagen descargada/enviada por
+    // WhatsApp coincida exactamente con lo que el usuario ve.
+    return exportSceneDataUrl({
       device: selectedDevice,
       caseStyle: selectedCaseStyle,
       image: uploadedImageElement,
       transform: imageTransform,
       mockup: getCachedMockup(selectedDevice.mockupImagePath),
+      sceneBackground: getStudioBackground(),
     });
   }, [selectedDevice, selectedCaseStyle, uploadedImageElement, imageTransform]);
 

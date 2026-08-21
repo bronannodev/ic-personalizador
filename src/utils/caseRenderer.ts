@@ -536,6 +536,138 @@ export function renderCaseToCanvas(
   ctx.restore();
 }
 
+/* ========================================================================== */
+/* Escena de estudio: funda "fotografiada" sobre el fondo de estudio.         */
+/* ========================================================================== */
+
+/** Relación de aspecto de la escena de presentación (retrato tipo 4:5). */
+export const SCENE_ASPECT = 4 / 5;
+
+let studioBg: HTMLImageElement | null = null;
+let studioBgPromise: Promise<HTMLImageElement | null> | null = null;
+
+/** Devuelve el fondo de estudio ya cargado (o null si aún no está). */
+export function getStudioBackground(): HTMLImageElement | null {
+  return studioBg;
+}
+
+/** Precarga el fondo de estudio (idempotente y cacheado). */
+export function preloadStudioBackground(src = '/studio-bg.png'): Promise<HTMLImageElement | null> {
+  if (studioBg) return Promise.resolve(studioBg);
+  if (studioBgPromise) return studioBgPromise;
+  studioBgPromise = new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      studioBg = img;
+      resolve(img);
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+  return studioBgPromise;
+}
+
+export interface SceneOptions extends RenderCaseOptions {
+  /** Fondo de estudio ya cargado. Si falta, se usa un degradado equivalente. */
+  sceneBackground?: HTMLImageElement | null;
+  /** Altura de la funda como fracción de la altura de la escena (0-1). */
+  caseHeightRatio?: number;
+}
+
+/**
+ * Dibuja la funda como si estuviera fotografiada sobre el fondo de estudio:
+ * fondo a pantalla completa (cover) + funda centrada con sombra de contacto.
+ * Reutiliza el render canónico de la funda, así que coincide 1:1 con el editor.
+ */
+export function renderSceneToCanvas(canvas: HTMLCanvasElement, options: SceneOptions): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // 1) Fondo de estudio (cover) o degradado equivalente de respaldo.
+  const bg = options.sceneBackground ?? studioBg;
+  if (bg && bg.naturalWidth) {
+    const s = Math.max(W / bg.naturalWidth, H / bg.naturalHeight);
+    const dw = bg.naturalWidth * s;
+    const dh = bg.naturalHeight * s;
+    ctx.drawImage(bg, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  } else {
+    const g = ctx.createRadialGradient(W / 2, H * 0.34, 0, W / 2, H * 0.34, Math.max(W, H) * 0.85);
+    g.addColorStop(0, '#f6f7f8');
+    g.addColorStop(1, '#d7d9dd');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // 2) Render de la funda en un lienzo auxiliar transparente (alta resolución).
+  const usePhoto = !!options.mockup && options.mockup.hasWindow;
+  let caseAspect: number;
+  if (usePhoto && options.mockup) {
+    caseAspect = options.mockup.naturalWidth / options.mockup.naturalHeight;
+  } else {
+    const rw =
+      options.device.dimensions.realWidthMm || options.device.dimensions.width * 25.4;
+    const rh =
+      options.device.dimensions.realHeightMm || options.device.dimensions.height * 25.4;
+    caseAspect = (rw / rh) * 1.18; // incluye el margen lateral del render vectorial
+  }
+
+  const caseHeightRatio = options.caseHeightRatio ?? 0.82;
+  const targetH = H * caseHeightRatio;
+  const targetW = targetH * caseAspect;
+
+  const off = document.createElement('canvas');
+  off.width = Math.max(2, Math.round(targetW * 2));
+  off.height = Math.max(2, Math.round(targetH * 2));
+  renderCaseToCanvas(off, {
+    ...options,
+    background: undefined, // transparente para recortar sobre el fondo
+    marginRatio: usePhoto ? 0 : 0.06,
+  });
+
+  const cx = W / 2;
+  const cy = H * 0.46;
+  const dx = cx - targetW / 2;
+  const dy = cy - targetH / 2;
+
+  // 3) Sombra de contacto elíptica bajo la funda.
+  const shadowRadius = targetW * 0.42;
+  const shadowY = dy + targetH * 0.985;
+  ctx.save();
+  ctx.translate(cx, shadowY);
+  ctx.scale(1, 0.16);
+  const sg = ctx.createRadialGradient(0, 0, 0, 0, 0, shadowRadius);
+  sg.addColorStop(0, 'rgba(0,0,0,0.30)');
+  sg.addColorStop(0.6, 'rgba(0,0,0,0.12)');
+  sg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sg;
+  ctx.beginPath();
+  ctx.arc(0, 0, shadowRadius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 4) Funda con una sombra proyectada sutil para integrarla en la escena.
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.28)';
+  ctx.shadowBlur = targetW * 0.07;
+  ctx.shadowOffsetY = targetH * 0.015;
+  ctx.drawImage(off, dx, dy, targetW, targetH);
+  ctx.restore();
+}
+
+/** Genera un data URL de la escena de estudio en alta resolución. */
+export function exportSceneDataUrl(options: SceneOptions, height = 1600): string {
+  const canvas = document.createElement('canvas');
+  canvas.height = height;
+  canvas.width = Math.round(height * SCENE_ASPECT);
+  renderSceneToCanvas(canvas, options);
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
 /**
  * Genera un data URL de la funda terminada en alta resolución.
  * Usa el mismo renderizador canónico, garantizando coincidencia con el editor.

@@ -1,6 +1,14 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { DeviceConfig, CaseStyle, ImageTransform } from '../../types/customizer';
-import { renderCaseToCanvas, preloadMockup, getCachedMockup, MockupData } from '../../utils/caseRenderer';
+import {
+  renderSceneToCanvas,
+  preloadMockup,
+  getCachedMockup,
+  preloadStudioBackground,
+  getStudioBackground,
+  SCENE_ASPECT,
+  MockupData,
+} from '../../utils/caseRenderer';
 
 interface CompositeMockupProps {
   device: DeviceConfig;
@@ -9,11 +17,10 @@ interface CompositeMockupProps {
   transform: ImageTransform;
 }
 
-// Resolución del lienzo de vista previa (retrato). El aspecto real de la funda
-// se calcula dentro del renderizador canónico a partir de las dimensiones del
-// dispositivo, así que aquí solo definimos un lienzo generoso y nítido.
-const CANVAS_W = 1000;
-const CANVAS_H = 1400;
+// Resolución del lienzo de la escena de estudio (retrato 4:5). La funda se
+// dibuja centrada sobre el fondo de estudio dentro del renderizador canónico.
+const SCENE_H = 1350;
+const SCENE_W = Math.round(SCENE_H * SCENE_ASPECT);
 
 export const CompositeMockup: React.FC<CompositeMockupProps> = ({
   device,
@@ -26,6 +33,20 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
   const [mockup, setMockup] = useState<MockupData | null>(
     () => getCachedMockup(device.mockupImagePath)
   );
+  const [studioBg, setStudioBg] = useState<HTMLImageElement | null>(
+    () => getStudioBackground()
+  );
+
+  // Precarga el fondo de estudio para la escena de presentación.
+  useEffect(() => {
+    let active = true;
+    preloadStudioBackground().then((img) => {
+      if (active) setStudioBg(img);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!uploadedImage) {
@@ -53,29 +74,21 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
     };
   }, [device.mockupImagePath]);
 
-  const usePhoto = !!mockup && mockup.hasWindow;
-
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    if (usePhoto && mockup) {
-      // Ajusta el lienzo al aspecto real de la foto del mockup.
-      canvas.width = mockup.naturalWidth;
-      canvas.height = mockup.naturalHeight;
-    } else {
-      canvas.width = CANVAS_W;
-      canvas.height = CANVAS_H;
-    }
-    renderCaseToCanvas(canvas, {
+    canvas.width = SCENE_W;
+    canvas.height = SCENE_H;
+    renderSceneToCanvas(canvas, {
       device,
       caseStyle,
       image: userImg,
       transform,
       showCamera: true,
       mockup,
-      background: usePhoto ? '#ffffff' : undefined,
+      sceneBackground: studioBg,
     });
-  }, [device, caseStyle, userImg, transform, mockup, usePhoto]);
+  }, [device, caseStyle, userImg, transform, mockup, studioBg]);
 
   useEffect(() => {
     render();
@@ -83,10 +96,10 @@ export const CompositeMockup: React.FC<CompositeMockupProps> = ({
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center p-2 select-none">
-      <div className="relative flex items-center justify-center w-full max-w-[300px] sm:max-w-[340px] md:max-w-[380px] bg-white rounded-2xl p-4 sm:p-5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/20">
+      <div className="relative flex items-center justify-center w-full max-w-[300px] sm:max-w-[340px] md:max-w-[380px] rounded-2xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/20">
         <canvas
           ref={canvasRef}
-          className="w-full h-auto max-h-[68vh] object-contain"
+          className="w-full h-auto max-h-[70vh] object-contain block"
           aria-label={`Vista previa de la funda para ${device.name}`}
         />
 
