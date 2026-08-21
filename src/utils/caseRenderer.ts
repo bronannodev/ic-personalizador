@@ -133,7 +133,45 @@ function analyzeMockup(src: string, img: HTMLImageElement): MockupData {
   }
   const px = data.data;
   const threshold = 40;
+  const totalPixels = natW * natH;
 
+  // 1) Marca de píxeles transparentes (donde el alfa es casi nulo).
+  const transparent = new Uint8Array(totalPixels);
+  for (let i = 0; i < totalPixels; i++) {
+    if (px[i * 4 + 3] < threshold) transparent[i] = 1;
+  }
+
+  // 2) Flood-fill desde TODOS los bordes a través de píxeles transparentes.
+  //    Esto marca el FONDO EXTERIOR (transparencia conectada al borde),
+  //    dejando la VENTANA INTERIOR del diseño (transparencia encerrada por el
+  //    marco opaco de la funda) sin marcar. Funciona tanto si el fondo es
+  //    opaco con un hueco, como si el fondo es transparente con marco flotante.
+  const exterior = new Uint8Array(totalPixels);
+  const stack: number[] = [];
+  const pushIf = (idx: number) => {
+    if (idx >= 0 && idx < totalPixels && transparent[idx] && !exterior[idx]) {
+      exterior[idx] = 1;
+      stack.push(idx);
+    }
+  };
+  for (let x = 0; x < natW; x++) {
+    pushIf(x); // fila superior
+    pushIf((natH - 1) * natW + x); // fila inferior
+  }
+  for (let y = 0; y < natH; y++) {
+    pushIf(y * natW); // columna izquierda
+    pushIf(y * natW + natW - 1); // columna derecha
+  }
+  while (stack.length) {
+    const idx = stack.pop()!;
+    const x = idx % natW;
+    if (x > 0) pushIf(idx - 1);
+    if (x < natW - 1) pushIf(idx + 1);
+    pushIf(idx - natW);
+    pushIf(idx + natW);
+  }
+
+  // 3) La ventana interior = transparente y NO exterior. Construye la máscara.
   const mask = document.createElement('canvas');
   mask.width = natW;
   mask.height = natH;
@@ -147,11 +185,9 @@ function analyzeMockup(src: string, img: HTMLImageElement): MockupData {
   let maxX = 0;
   let maxY = 0;
   let count = 0;
-  const totalPixels = natW * natH;
 
   for (let i = 0; i < totalPixels; i++) {
-    const alpha = px[i * 4 + 3];
-    if (alpha < threshold) {
+    if (transparent[i] && !exterior[i]) {
       count++;
       const x = i % natW;
       const y = (i / natW) | 0;
@@ -172,10 +208,9 @@ function analyzeMockup(src: string, img: HTMLImageElement): MockupData {
   const frac = count / totalPixels;
   const boxW = maxX - minX;
   const boxH = maxY - minY;
-  // Ventana válida: suficiente área transparente, con forma de recuadro central
-  // (no toda la imagen), y no degenerada.
-  const spansAlmostEverything = boxW > natW * 0.94 && boxH > natH * 0.94;
-  const hasWindow = frac >= 0.06 && frac < 0.85 && boxW > 8 && boxH > 8 && !spansAlmostEverything;
+  // Ventana válida: hay una región interior encerrada por el marco, de tamaño
+  // razonable (no ruido de unos pocos píxeles, no toda la imagen).
+  const hasWindow = frac >= 0.03 && frac < 0.92 && boxW > 8 && boxH > 8;
 
   return {
     src,

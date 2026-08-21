@@ -22,8 +22,8 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 const ALPHA_THRESHOLD = 40; // igual que caseRenderer.ts
-const MIN_FRAC = 0.06;
-const MAX_FRAC = 0.85;
+const MIN_FRAC = 0.03;
+const MAX_FRAC = 0.92;
 
 function paeth(a, b, c) {
   const p = a + b - c;
@@ -99,37 +99,65 @@ function analyze(file) {
     }
   }
 
-  const alphaAt = (x, y) => out[y * stride + x * bpp + 3];
+  // MISMA lógica que caseRenderer.ts: flood-fill desde los bordes para separar
+  // el FONDO EXTERIOR transparente de la VENTANA INTERIOR del diseño.
+  const total = width * height;
+  const transparent = new Uint8Array(total);
+  for (let i = 0; i < total; i++) {
+    if (out[i * bpp + 3] < ALPHA_THRESHOLD) transparent[i] = 1;
+  }
+  const exterior = new Uint8Array(total);
+  const stack = [];
+  const pushIf = (idx) => {
+    if (idx >= 0 && idx < total && transparent[idx] && !exterior[idx]) {
+      exterior[idx] = 1;
+      stack.push(idx);
+    }
+  };
+  for (let x = 0; x < width; x++) {
+    pushIf(x);
+    pushIf((height - 1) * width + x);
+  }
+  for (let y = 0; y < height; y++) {
+    pushIf(y * width);
+    pushIf(y * width + width - 1);
+  }
+  while (stack.length) {
+    const idx = stack.pop();
+    const x = idx % width;
+    if (x > 0) pushIf(idx - 1);
+    if (x < width - 1) pushIf(idx + 1);
+    pushIf(idx - width);
+    pushIf(idx + width);
+  }
+
   let minX = width;
   let minY = height;
   let maxX = 0;
   let maxY = 0;
   let count = 0;
-  let sampled = 0;
-  for (let y = 0; y < height; y += 2) {
-    for (let x = 0; x < width; x += 2) {
-      sampled++;
-      if (alphaAt(x, y) < ALPHA_THRESHOLD) {
-        count++;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
+  for (let i = 0; i < total; i++) {
+    if (transparent[i] && !exterior[i]) {
+      count++;
+      const x = i % width;
+      const y = (i / width) | 0;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
     }
   }
-  const frac = count / sampled;
+  const frac = count / total;
   const boxW = maxX - minX;
   const boxH = maxY - minY;
-  const spans = boxW > width * 0.94 && boxH > height * 0.94;
-  const ok = frac >= MIN_FRAC && frac < MAX_FRAC && boxW > 8 && boxH > 8 && !spans;
+  const ok = frac >= MIN_FRAC && frac < MAX_FRAC && boxW > 8 && boxH > 8;
 
   let reason = 'ventana válida';
   if (!ok) {
-    if (frac < MIN_FRAC) reason = `sin hueco transparente (solo ${(frac * 100).toFixed(1)}%) — funda opaca`;
-    else if (frac >= MAX_FRAC) reason = 'demasiada transparencia (casi toda la imagen)';
-    else if (spans) reason = 'transparencia dispersa por toda la imagen (fondo, no ventana)';
-    else reason = 'hueco degenerado';
+    if (frac < MIN_FRAC)
+      reason = `sin ventana interior transparente (solo ${(frac * 100).toFixed(1)}%) — funda opaca`;
+    else if (frac >= MAX_FRAC) reason = 'ventana interior demasiado grande (casi toda la imagen)';
+    else reason = 'ventana degenerada';
   }
 
   return {
