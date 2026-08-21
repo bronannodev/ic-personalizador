@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { DeviceConfig, CaseStyle, ImageTransform } from '../../types/customizer';
-import { ImagePlus, Sparkles } from 'lucide-react';
+import { ImagePlus, Sparkles, Move } from 'lucide-react';
 import { preloadMockup, getCachedMockup, MockupData } from '../../utils/caseRenderer';
 
 interface PhoneCase2DProps {
@@ -241,76 +241,119 @@ export const PhoneCase2D: React.FC<PhoneCase2DProps> = ({
         onTouchEnd={handleTouchEnd}
       >
         <div className="relative flex items-center justify-center h-[76vh] sm:h-[78vh] md:h-[82vh] max-h-[680px] w-full py-1">
+          {/* Escena de estudio: mismo look que la funda terminada, pero editable */}
           <div
-            ref={containerRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onWheel={handleWheel}
-            className={`relative h-full touch-none ${
-              uploadedImage ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
-            }`}
-            style={{ aspectRatio: `${mockAspect}`, maxHeight: '100%' }}
+            className="relative flex items-center justify-center rounded-2xl overflow-hidden border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)]"
+            style={{
+              height: '100%',
+              aspectRatio: '4 / 5',
+              maxHeight: '100%',
+              backgroundImage: 'url(/studio-bg.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
           >
-            {/* Ventana del diseño: la imagen del cliente recortada al hueco real */}
+            {/* Sombra de contacto elíptica bajo la funda */}
             <div
-              className="absolute overflow-hidden"
+              className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
               style={{
-                left: `${winLeft}%`,
-                top: `${winTop}%`,
-                width: `${winW}%`,
-                height: `${winH}%`,
+                top: '86%',
+                width: '52%',
+                height: '5%',
+                background:
+                  'radial-gradient(ellipse at center, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.12) 55%, rgba(0,0,0,0) 75%)',
+                filter: 'blur(3px)',
               }}
-            >
-              {uploadedImage ? (
-                <img
-                  ref={innerImgRef}
-                  src={uploadedImage}
-                  alt="Diseño en funda"
-                  className="max-w-none max-h-none origin-center will-change-transform pointer-events-none"
-                  style={{
-                    transform: imgTransformStr,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                  }}
-                  draggable={false}
-                />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-slate-600 bg-slate-100">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-600/15 text-indigo-600 border border-indigo-500/30 flex items-center justify-center mb-2 shadow">
-                    <ImagePlus className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs uppercase tracking-wider font-semibold text-slate-800 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                    Subir foto
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Foto real de la funda POR ENCIMA (marco, cámara, sombras reales) */}
-            <img
-              src={mockup.src}
-              alt={`Funda ${device.name}`}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none drop-shadow-[0_25px_45px_rgba(0,0,0,0.6)]"
-              draggable={false}
             />
 
-            {/* Guía de área segura dentro de la ventana */}
-            {showGuides && uploadedImage && (
+            <div
+              ref={containerRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onWheel={handleWheel}
+              className={`relative touch-none drop-shadow-[0_22px_40px_rgba(0,0,0,0.35)] ${
+                uploadedImage ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+              }`}
+              style={{ aspectRatio: `${mockAspect}`, height: '82%', marginBottom: '4%' }}
+            >
+              {/* Ventana del diseño: la imagen del cliente recortada al hueco real */}
               <div
-                className="absolute border-2 border-dashed border-white/60 pointer-events-none rounded-lg transition-opacity duration-200"
+                className="absolute overflow-hidden"
                 style={{
                   left: `${winLeft}%`,
                   top: `${winTop}%`,
                   width: `${winW}%`,
                   height: `${winH}%`,
-                  opacity: isInteracting ? 0.9 : 0,
                 }}
+              >
+                {uploadedImage ? (
+                  <img
+                    ref={innerImgRef}
+                    src={uploadedImage}
+                    alt="Diseño en funda"
+                    className="max-w-none max-h-none origin-center will-change-transform pointer-events-none"
+                    style={{
+                      transform: imgTransformStr,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-slate-600 bg-slate-100">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-600/15 text-indigo-600 border border-indigo-500/30 flex items-center justify-center mb-2 shadow">
+                      <ImagePlus className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs uppercase tracking-wider font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      Subir foto
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Foto real de la funda POR ENCIMA (marco, cámara, sombras reales) */}
+              <img
+                src={mockup.src}
+                alt={`Funda ${device.name}`}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
+                draggable={false}
               />
-            )}
+
+              {/* Guía de área segura dentro de la ventana */}
+              {showGuides && uploadedImage && (
+                <div
+                  className="absolute border-2 border-dashed border-white/70 pointer-events-none rounded-lg transition-opacity duration-200"
+                  style={{
+                    left: `${winLeft}%`,
+                    top: `${winTop}%`,
+                    width: `${winW}%`,
+                    height: `${winH}%`,
+                    opacity: isInteracting ? 0.9 : 0,
+                  }}
+                />
+              )}
+
+              {/* Manija de arrastre (crosshair) en el centro de la ventana */}
+              {uploadedImage && (
+                <div
+                  className="absolute pointer-events-none flex items-center justify-center transition-opacity duration-200"
+                  style={{
+                    left: `${winLeft + winW / 2}%`,
+                    top: `${winTop + winH / 2}%`,
+                    transform: 'translate(-50%, -50%)',
+                    opacity: isInteracting ? 0.35 : 0.8,
+                  }}
+                >
+                  <div className="w-11 h-11 rounded-full bg-white/70 backdrop-blur-sm border border-slate-300/80 shadow-md flex items-center justify-center">
+                    <Move className="w-5 h-5 text-slate-700" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
